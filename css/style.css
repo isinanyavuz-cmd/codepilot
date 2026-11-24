@@ -628,14 +628,17 @@ button.node:not(.locked):active { transform: scale(.92); }
   .brief p { font-size: 13px; }
   .pal .pl { display: none; }
   .pal { max-height: 88px; }
+  .palrow { gap: 5px; }
+  .palrow .blk { height: 28px; padding-inline: 6px; gap: 4px; font-size: 11.5px; }
+  .palrow .blk .bi { width: 13px; height: 13px; }
   .tabrow, .meta { gap: 4px; }
   .meta .mini { min-height: 40px; }
   .tabs button { padding: 5px 8px; }
   .counter { font-size: 11px; flex-direction: column; gap: 0; align-items: flex-start; }
   .counter .goal { padding: 1px 4px; }
   .ctrl { gap: 6px; }
-  .ctrl .big { min-width: 0; padding: 0 8px; font-size: 17px; }
-  .ctrl .sq { width: 44px; flex: none; }
+  .ctrl .big { height: 48px; min-width: 0; padding: 0 8px; font-size: 17px; }
+  .ctrl .sq { width: 44px; height: 44px; flex: none; }
   .code:has(#mobileFeedback .toast:not([hidden])) .brief > p { display: none; }
   #mobileFeedback .toast { position: static; transform: none; width: 100%; max-height: 94px; overflow: auto;
                            gap: 6px; padding: 4px 7px; font-size: 13px; box-shadow: none; animation: none; }
