@@ -156,6 +156,13 @@ export class Editor {
     if (this.history.length > 60) this.history.shift();
   }
   changed() { this.render(); this.onChange(); }
+  clear() {
+    if (this.locked || !this.program.length) return;
+    this.snapshot();
+    this.closePop();
+    this.program = [];
+    this.changed();
+  }
   undo() {
     const last = this.history.pop();
     if (!last) return;

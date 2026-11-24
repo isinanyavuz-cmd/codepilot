@@ -45,6 +45,7 @@ export class Game {
     });
     $('speedBtn').addEventListener('click', () => this.cycleSpeed());
     $('undoBtn').addEventListener('click', () => { sfx.click(); if (this.status !== 'idle') this.stop(); this.editor.undo(); });
+    $('clearBtn').addEventListener('click', () => { sfx.click(); this.editor.clear(); });
     $('backBtn').addEventListener('click', () => { sfx.click(); this.close(); });
     $('tabs').addEventListener('click', (e) => { const b = e.target.closest('[data-tab]'); if (b) { sfx.click(); this.setTab(b.dataset.tab); } });
     $('waves').addEventListener('click', (e) => {
@@ -89,7 +90,7 @@ export class Game {
       : `Aynı program ${this.fields.length} dalgayı da geçmeli.<span class="more"> Görmek için sayıya dokun.</span>`;
     const saved = this.store.program(level.saveKey);
     const solution = this.store.showSolutions && level.solution ? level.solution() : null;
-    const program = this.quiz ? level.rounds[0].program() : solution ?? (saved && saved.length ? clone(saved) : level.initial ? level.initial() : []);
+    const program = this.quiz ? level.rounds[0].program() : solution ?? (saved ? clone(saved) : level.initial ? level.initial() : []);
     this.lib = this.libraryFor(level);
     this.editor.load(level, program, Object.keys(this.lib || {}), !!this.quiz);
     this.setTab(this.quiz?.python ? 'python' : 'blocks'); this.hideToast(); this.hideCall(); this.setStatus('idle');
@@ -172,15 +173,19 @@ export class Game {
   /** Alanın sığacağı ekran bölgesini hesaplar (panelin kapatmadığı kısım). */
   layout() {
     if ($('game').hidden) return;
+    const phone = window.matchMedia('(max-width: 480px)').matches;
+    const toast = $('toast'), feedback = phone ? $('mobileFeedback') : $('game');
+    if (toast.parentElement !== feedback) feedback.append(toast);
     const W = window.innerWidth, H = window.innerHeight, p = $('panel').getBoundingClientRect();
     const stacked = p.width > W * 0.8;
     const top = $('track').offsetParent ? 100 : 76;
     const telemetry = $('telemetry').hidden ? null : $('telemetry').getBoundingClientRect();
-    const stageTop = stacked && telemetry ? telemetry.bottom + 8 : stacked ? 66 : top;
+    const stageTop = phone ? Math.max($('sectorName').getBoundingClientRect().bottom, $('hud').getBoundingClientRect().bottom, telemetry?.bottom ?? 0) + 8
+      : stacked && telemetry ? telemetry.bottom + 8 : stacked ? 66 : top;
     const stageBottom = stacked ? p.top - 4 : telemetry ? telemetry.top - 8 : H - 6;
     this.rect = { x: 0, y: stageTop, w: stacked ? W : p.left - 6, h: Math.max(120, stageBottom - stageTop) };
     this.view.setRect(this.rect);
-    $('toast').style.left = `${this.rect.x + this.rect.w / 2}px`;
+    toast.style.left = phone ? '' : `${this.rect.x + this.rect.w / 2}px`;
     const scrub = $('scrub').style;
     scrub.right = `${W - this.rect.x - this.rect.w + 14}px`; scrub.top = `${this.rect.y + this.rect.h - (stacked ? 44 : 52)}px`;
     if (this.quiz?.choices) this.renderPicks();
@@ -231,6 +236,8 @@ export class Game {
     el.classList.toggle('full', n >= maxBlocks);
     el.innerHTML = `<span><b>${n}</b> / ${maxBlocks} blok</span>${par ? `<span class="goal ${n > 0 && n <= par ? 'lit' : ''}">${svg('i-star')}en çok ${par}</span>` : ''}`;
     $('undoBtn').disabled = !this.editor.history.length;
+    $('clearBtn').hidden = this.editor.locked;
+    $('clearBtn').disabled = !n;
     if (this.tab === 'python') this.renderPython();
   }
 

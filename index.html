@@ -11,8 +11,8 @@
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <title>Kod Pilotu</title>
-<link rel="stylesheet" href="css/style.css?v=c9181415">
-<meta name="surum" content="8c8264a">
+<link rel="stylesheet" href="css/style.css?v=a185de17">
+<meta name="surum" content="2470d1e">
 <script type="importmap">
 {
  "imports": {
@@ -38,8 +38,8 @@
   "./src/render/view.js": "./src/render/view.js?v=3b461bef",
   "./src/storage.js": "./src/storage.js?v=b74c528d",
   "./src/ui/copilot.js": "./src/ui/copilot.js?v=514243d9",
-  "./src/ui/editor.js": "./src/ui/editor.js?v=0e7f2bae",
-  "./src/ui/game.js": "./src/ui/game.js?v=2d0f56dd",
+  "./src/ui/editor.js": "./src/ui/editor.js?v=99c517f4",
+  "./src/ui/game.js": "./src/ui/game.js?v=008dfe4c",
   "./src/ui/hangar.js": "./src/ui/hangar.js?v=0dd951e3",
   "./src/ui/map.js": "./src/ui/map.js?v=a465e375",
   "./src/ui/overlay.js": "./src/ui/overlay.js?v=708adda0",
@@ -81,7 +81,7 @@
   </div>
   <button class="iconbtn gsnd" id="gameSoundBtn" aria-label="Sesi kapat/aç"><svg viewBox="0 0 32 32"><use href="#i-sound"/></svg></button>
   <button class="iconbtn gcam" id="camBtn" aria-label="Pilot kamerası"><svg viewBox="0 0 32 32"><use href="#i-cam"/></svg></button>
-  <div class="hud"><div class="gems glass" id="gems" hidden></div><div class="record glass" id="record" hidden></div></div>
+  <div class="hud" id="hud"><div class="gems glass" id="gems" hidden></div><div class="record glass" id="record" hidden></div></div>
   <div class="track" id="track"></div>
   <div class="telemetry glass" id="telemetry" aria-live="polite" hidden></div>
 
@@ -92,10 +92,12 @@
       <p id="missionText"></p>
       <div class="wavebar" id="waveBar" hidden><span class="waves" id="waves"></span><span class="note" id="waveNote"></span></div>
     </div>
+    <div id="mobileFeedback"></div>
     <div class="tabrow">
       <div class="tabs" id="tabs"><button class="on" data-tab="blocks">Blok</button><button data-tab="python">Python</button></div>
       <div class="meta">
         <button class="mini" id="undoBtn" aria-label="Geri al" disabled><svg viewBox="0 0 32 32"><use href="#i-undo"/></svg></button>
+        <button class="mini clear" id="clearBtn" aria-label="Tüm kodu temizle" title="Tüm kodu temizle" disabled>Temizle</button>
         <span class="counter" id="counter"></span>
       </div>
     </div>

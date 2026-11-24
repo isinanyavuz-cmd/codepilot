@@ -30,19 +30,20 @@ function listModules(dir = 'src') {
 
 /** html → damgaları güncel html, sürüm kodu ve damgalanan dosya sayısı. */
 export function stamp(html, read = (f) => readFileSync(join(root, f)), modules = [...listModules(), 'vendor/three.bundle.min.js']) {
-  const h = (f) => sha(read(f)).slice(0, 8);
+  const lf = (text) => text.toString().replace(/\r\n/g, '\n');
+  const h = (f) => sha(lf(read(f))).slice(0, 8);
   const css = h('css/style.css');
   const imports = {};
   for (const f of modules) imports[`./${f}`] = `./${f}?v=${h(f)}`;
   const code = sha(css + Object.values(imports).join('')).slice(0, 7);
   const head = `<meta name="surum" content="${code}">\n<script type="importmap">\n${JSON.stringify({ imports }, null, 1)}\n</script>\n</head>`;
-  const out = html
+  const out = lf(html)
     .replace(/<meta name="surum"[^>]*>\n/, '')
     .replace(/<script type="importmap">[\s\S]*?<\/script>\n/, '')
     .replace(/(href="css\/style\.css)(?:\?v=[0-9a-f]*)?(")/, `$1?v=${css}$2`)
     .replace(/(<script type="module" src="src\/main\.js)(?:\?v=[0-9a-f]*)?(")/, `$1?v=${h('src/main.js')}$2`)
     .replace('</head>', head);
-  return { html: out, code, files: modules.length + 1 };
+  return { html: html.includes('\r\n') ? out.replace(/\n/g, '\r\n') : out, code, files: modules.length + 1 };
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
