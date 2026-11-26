@@ -167,3 +167,32 @@ test('oyuncu profilleri: eski kayıt ilk pilotundur; her pilotun kaydı ayrı tu
   assert.deepEqual(store.profiles().map((p) => [p.name, p.stars]), [['Ece', 3], ['Mert', 1]]);
   assert.equal(store.addProfile('   '), null);
 });
+
+test('çözüm modunda kazanılan yıldız, rekor ve günlük kalıcı kayda yazılmaz', async () => {
+  const saved = { stars: { '1-1': 1 } };
+  const { store, raw } = await load(saved, { search: '?cozum' });
+  store.setStars('1-2', 3); store.setBest('1-2', { blocks: 4, stars: 3, paths: [] });
+  store.attempt('1-2', { won: true }); store.addLog({ kind: 'win', id: '1-2', stars: 3, gain: 3 });
+  assert.equal(store.stars('1-2'), 3, 'oturum içinde görünür');
+  assert.deepEqual(raw(), saved, 'ama kayda geçmez');
+  const normal = await load(raw());
+  assert.equal(normal.store.stars('1-2'), 0);
+});
+
+test('bozuk aktarma kodu reddedilir ya da güvenli hale getirilir', async () => {
+  const { store } = await load();
+  const code = (obj) => btoa(unescape(encodeURIComponent(JSON.stringify(obj))));
+  assert.equal(store.importCode(code({ stars: null })), false);
+  assert.equal(store.importCode(code({ stars: [] })), false);
+  assert.equal(store.importCode('çöp'), false);
+  assert.equal(store.importCode(code({ stars: { '1-1': 3, '1-2': 'x', '1-3': 7 }, log: 5, tries: null, sound: 'evet', workshop: 3 })), true);
+  assert.equal(store.stars('1-1'), 3);
+  assert.equal(store.stars('1-2'), 0);
+  assert.equal(store.stars('1-3'), 0);
+  assert.deepEqual(store.log(), []);
+  assert.deepEqual(store.allTries(), {});
+  assert.equal(store.sound, true);
+  assert.equal(store.workshop, null);
+  store.addLog({ kind: 'win', id: '1-1' });   // günlük yine dizi: çökmez
+  assert.equal(store.log().length, 1);
+});

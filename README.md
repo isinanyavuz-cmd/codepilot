@@ -93,6 +93,7 @@ Sonra tarayıcıda `http://localhost:8080` adresini aç. Fare ve dokunmatik ekra
 - Adresin sonuna `?hepsi` (ya da `#hepsi`) eklersen bütün sahneler açılır (gözden geçirmek için).
 - Gizli çözüm modu: `?cozum` bütün sahneleri açar ve her görevin kod alanına örnek çözümünü yükler
   (Python sekmesinde kod karşılığı da görünür). Örneğin `?cozum#8-8` doğrudan son görevin çözümünü açar.
+  Bu modda kayda hiçbir şey yazılmaz: hazır çözümle kazanılan yıldızlar normal adrese dönünce görünmez.
   Tahmin turlarında doğru kare işaretlenir. Bu modda programı değiştirmek kayıtlı programlarının üzerine yazmaz;
   parametreyi kaldırınca normal oyuna dönersin. Atölyede oluşturulan görevlerin hazır çözümü yoktur.
 - `#3-4` gibi bir ek doğrudan o sahneyi açar: `http://localhost:8080/?hepsi#3-4`.
@@ -174,7 +175,8 @@ Sonra tarayıcıda `http://localhost:8080` adresini aç. Fare ve dokunmatik ekra
 
 ## Veli paneli
 
-Köprüdeki **Veli** düğmesi şifreyle açılır: **321321** (BİLSEM uygulamasıyla aynı). Şifre
+Köprüdeki **Veli** düğmesi şifreyle açılır; şifre BİLSEM uygulamasındaki veli şifresiyle aynıdır
+(çocuk görmesin diye burada yazılmaz). Şifre
 yalnızca çocuğun kaydı kazara silmesini önlemek içindir; gerçek bir güvenlik önlemi değildir.
 
 - **Rapor**: toplam yıldız, geçilen görev, oyun süresi, oynanan gün; sektör sektör geçilen

@@ -659,11 +659,13 @@ button.node:not(.locked):active { transform: scale(.92); }
 }
 
 @media (max-width: 360px) {
+  /* Küçük ekranda alanın açıklaması gizlenir; gösterge tek satır kalır, uçuş alanına yer açılır. */
+  #game .telemetry .field-key { display: none; }
   #game .top { right: 105px; }
   #game .hud { right: 12px; top: 59px; }
-  #game:has(.gems:not([hidden])) .telemetry { top: 100px; }
-  .code { height: 61%; padding: 8px; gap: 5px; }
-  .code .pal { max-height: 70px; }
+  /* Kristal sayacı ve gösterge aynı satırı paylaşır: uçuş alanına yer kalsın. */
+  #game:has(.gems:not([hidden])) .telemetry { top: 59px; max-width: calc(100% - 124px); }
+  .code { height: 58%; padding: 8px; gap: 5px; }
   .code .ctrl > button { height: 44px; }
 }
 
@@ -677,6 +679,39 @@ button.node:not(.locked):active { transform: scale(.92); }
   #game .telemetry { top: auto; bottom: 8px; max-width: calc(100vw - var(--side-code) - 36px); }
   #game .pal { max-height: 76px; }
   #game .ctrl > button { height: 44px; }
+}
+
+/* Telefon (dik ve yatay): program alanı hep görünür kalır. Yer daralınca görev metni kendi içinde
+   kayar; palet iki satırdır ve fazlası yana kaydırılır (blok yukarı sürüklenir, yana kaydırılınca palet kayar). */
+@media (max-width: 480px), (min-width: 481px) and (max-height: 480px) and (orientation: landscape) {
+  #game .code .brief { flex: 0 1 auto; min-height: 42px; overflow-y: auto; overscroll-behavior: contain; }
+  #game .code .ws, #game .code .py { min-height: 96px; }
+  #game .code .pal { max-height: none; overflow: hidden; padding: 6px 0 6px 6px; }
+  #game .palrow, #game .palrow.dense { display: grid; grid-auto-flow: column; grid-template-rows: repeat(2, auto); justify-content: start; gap: 5px;
+    overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; padding-right: 22px;
+    -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 22px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 22px), transparent); }
+  #game .palrow::-webkit-scrollbar { display: none; }
+  #game .palrow .blk, #game .palrow .cond { touch-action: pan-x; }
+  #game .counter { font-size: 11px; flex-direction: column; gap: 0; align-items: flex-start; }
+  #game .counter .goal { padding: 1px 4px; }
+}
+@media (min-width: 481px) and (max-height: 480px) and (orientation: landscape) {
+  #game { --side-code: min(52vw, 420px); }
+  #game .code .ws, #game .code .py { min-height: 84px; }
+  #game .palrow .blk, #game .palrow.dense .blk { height: 26px; padding-inline: 6px; gap: 4px; font-size: 11.5px; }
+  #game .palrow .blk .bi { width: 12px; height: 12px; }
+  #game .ws .blk { height: 32px; padding-inline: 10px; gap: 6px; font-size: 14px; }
+  #game .ws .c > .blk { height: auto; min-height: 32px; padding-block: 3px; }
+  #game .wavebar .note { display: none; }
+  #game .brief p { font-size: 13px; }
+  #game .tabs button { padding: 5px 8px; }
+  #game .meta { gap: 4px; }
+}
+
+@media (max-width: 360px) {
+  #game .code .ws, #game .code .py { min-height: 76px; }
+  #game .code .brief { min-height: 58px; }
+  #game .meta .clear { padding: 0 6px; }
 }
 
 /* ───────── sektörler arası geçiş (ui/warp.js) ───────── */

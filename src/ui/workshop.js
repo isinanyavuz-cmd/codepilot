@@ -37,7 +37,7 @@ export class Workshop {
       <div class="btns"><button class="btn" data-act="clear">Temizle</button><button class="btn" data-act="share" id="wkShare">Paylaş</button><button class="btn" data-act="close">Kapat</button><button class="btn primary" data-act="play">Dene${svg('i-play')}</button></div>`, (act) => {
       this.sfx.click();
       if (act === 'close') hideCard();
-      else if (act === 'clear') { this.design = { lines: blankField(this.lanes, this.rows), par: null, solved: false, battery: 0 }; this.save(); this.render(); }
+      else if (act === 'clear') this.touch(blankField(this.lanes, this.rows), 0);   // eski çözüm programı da silinir
       else if (act === 'play') this.play();
       else if (act === 'share') this.share();
     }, 'wide');

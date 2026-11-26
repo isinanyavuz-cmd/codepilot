@@ -44,6 +44,22 @@ const fresh = () => ({
   workshop: null,   // atölyedeki tasarım: { lines, par, solved }
 });
 let data = fresh();
+const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
+/**
+ * Dışarıdan gelen kaydı (aktarma kodu) güvenli hale getirir: türü beklenenden farklı olan alan
+ * (ör. yıldızlar yerine null, günlük yerine sayı) varsayılanına döner; oyun bozuk kayıtla çökmez.
+ */
+function clean(next) {
+  const out = fresh();
+  for (const [k, def] of Object.entries(out)) {
+    const v = next[k];
+    if (v === undefined) continue;
+    const ok = Array.isArray(def) ? Array.isArray(v) : def === null ? v === null || isObject(v) : isObject(def) ? isObject(v) : typeof v === typeof def;
+    if (ok) out[k] = v;
+  }
+  for (const [id, n] of Object.entries(out.stars)) if (!Number.isInteger(n) || n < 0 || n > 3) delete out.stars[id];
+  return out;
+}
 function load() {
   data = fresh();
   try {
@@ -52,7 +68,9 @@ function load() {
   } catch (e) { /* kayıt okunamadı; temiz başla */ }
 }
 load();
-const save = () => { try { localStorage.setItem(keyOf(profiles.active), JSON.stringify(data)); } catch (e) { /* kayıt kapalı olabilir */ } };
+// Çözüm modu bir inceleme modudur: hazır çözümlerle kazanılan yıldızlar, rütbeler ve rekorlar
+// gerçek kayda yazılmaz. Oturum içinde görünür, sayfa normal adresle açılınca eski kayıt döner.
+const save = () => { if (modes.showSolutions) return; try { localStorage.setItem(keyOf(profiles.active), JSON.stringify(data)); } catch (e) { /* kayıt kapalı olabilir */ } };
 /** Profilin görünen adı: listedeki ad, yoksa kaydındaki pilot adı, yoksa "Pilot N". */
 const nameOf = (p, i) => p.name || (p.id === profiles.active ? data.name : (() => { try { return JSON.parse(localStorage.getItem(keyOf(p.id)) || '{}').name || ''; } catch (e) { return ''; } })()) || `Pilot ${i + 1}`;
 
@@ -148,8 +166,8 @@ export const store = {
     try {
       const text = decodeURIComponent(escape(atob(String(code).trim().replace(/-/g, '+').replace(/_/g, '/'))));
       const next = JSON.parse(text);
-      if (!next || typeof next !== 'object' || typeof next.stars !== 'object') return false;
-      data = { ...fresh(), ...next }; save();
+      if (!isObject(next) || !isObject(next.stars)) return false;
+      data = clean(next); save();
       return true;
     } catch (e) { return false; }
   },

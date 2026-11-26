@@ -44,7 +44,7 @@ export class MapScreen {
       { id: 'daily', icon: 'i-sun', label: 'Günün Dalgası', run: () => this.openDaily(), badge: () => (store.daily(dayOf()) ? '' : '!') },
       { id: 'workshop', icon: 'i-tool', label: 'Atölye', run: () => workshop.open() },
       { id: 'log', icon: 'i-book', label: 'Günlük', run: () => this.showLog() },
-      { id: 'pilots', icon: 'i-crew', label: 'Pilotlar', run: () => this.showPilots() },
+      { id: 'pilots', icon: 'i-pilot', label: 'Pilotlar', run: () => this.showPilots() },
       { id: 'parent', icon: 'i-lock', label: 'Veli', run: () => parent.open() },
     ];
     $('dock').addEventListener('click', (e) => {

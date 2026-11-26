@@ -839,7 +839,8 @@ export class Game {
       ['Çıkışa ulaştın', true],
       total ? [`Kristaller: ${collected} / ${total}`, collected === total] : null,
       [blocks <= level.par ? `En çok ${level.par} blok kullandın` : `${blocks} blok kullandın (hedef ${level.par})`, blocks <= level.par],
-      best && blocks < best.blocks ? [`Yeni rekor: ${blocks} blok (eskisi ${best.blocks})`, true] : null,
+      // Rekor yalnızca gerçekten kaydedildiyse duyurulur: daha az blokla ama daha az yıldızla geçmek rekor değildir.
+      record && best && blocks < best.blocks ? [`Yeni rekor: ${blocks} blok (eskisi ${best.blocks})`, true] : null,
     ].filter(Boolean);
     // Kanca: sırada ne var ve en yakın hedef ne? Çocuk kartı kapatmadan bir sonraki adımı görsün.
     const leftInSector = levelsOf(level.sector).filter((l) => !store.passed(l)).length;
