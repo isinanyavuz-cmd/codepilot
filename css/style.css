@@ -623,7 +623,15 @@ button.node:not(.locked):active { transform: scale(.92); }
   #game .hud { right: 104px; top: 12px; }
   #game .iconbtn.gcam { right: 58px; }
   #game .iconbtn { width: 40px; height: 42px; }
-  .code { bottom: max(8px, env(safe-area-inset-bottom)); height: 55%; padding: 9px; gap: 6px; }
+  .code { bottom: max(8px, env(safe-area-inset-bottom)); height: 52%; padding: 9px; gap: 6px; }
+  /* Dalga sayıları görev başlığının satırına çıkar (not gizlenir): görev metnine iki satır kalır. */
+  #game .brief { display: flex; flex-wrap: wrap; align-items: center; column-gap: 8px; }
+  #game .brief .row { flex: 1 1 auto; min-width: 0; margin-bottom: 3px; }
+  #game .brief h2, #game .brief p { flex: 0 0 100%; order: 2; }
+  #game .wavebar { order: 1; margin: 0 0 3px; padding: 3px 6px; gap: 5px; }
+  #game .wavebar .note { display: none; }
+  /* Gösterge ve açıklaması yan yana: uçuş alanı yukarıdan daha az yer kaybeder. */
+  #game .telemetry { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 2px 10px; padding: 5px 9px; }
   .brief .row { margin-bottom: 3px; }
   .brief p { font-size: 13px; }
   .pal .pl { display: none; }
@@ -639,9 +647,9 @@ button.node:not(.locked):active { transform: scale(.92); }
   .counter { font-size: 11px; flex-direction: column; gap: 0; align-items: flex-start; }
   .counter .goal { padding: 1px 4px; }
   .ctrl { gap: 6px; }
-  #runBtn { height: 44px; min-width: 0; max-width: min(46%, 170px); margin-inline-end: auto; padding: 0 8px; font-size: 16px; }
-  #runBtn svg { width: 18px; height: 18px; }
-  .ctrl .sq { width: 44px; height: 44px; flex: none; }
+  #runBtn { height: 40px; min-width: 0; width: auto; flex: 0 1 auto; max-width: min(34%, 124px); margin-inline-end: auto; padding: 0 14px; font-size: 15px; gap: 6px; }
+  #runBtn svg { width: 15px; height: 15px; }
+  .ctrl .sq { width: 42px; height: 42px; flex: none; }
   .code:has(#mobileFeedback .toast:not([hidden])) .brief > p { display: none; }
   #mobileFeedback .toast { position: static; transform: none; width: 100%; max-height: 94px; overflow: auto;
                            gap: 6px; padding: 4px 7px; font-size: 13px; box-shadow: none; animation: none; }
@@ -665,7 +673,7 @@ button.node:not(.locked):active { transform: scale(.92); }
   #game .hud { right: 12px; top: 59px; }
   /* Kristal sayacı ve gösterge aynı satırı paylaşır: uçuş alanına yer kalsın. */
   #game:has(.gems:not([hidden])) .telemetry { top: 59px; max-width: calc(100% - 124px); }
-  .code { height: 58%; padding: 8px; gap: 5px; }
+  .code { height: 54%; padding: 8px; gap: 5px; }
   .code .ctrl > button { height: 44px; }
 }
 
@@ -684,8 +692,9 @@ button.node:not(.locked):active { transform: scale(.92); }
 /* Telefon (dik ve yatay): program alanı hep görünür kalır. Yer daralınca görev metni kendi içinde
    kayar; palet iki satırdır ve fazlası yana kaydırılır (blok yukarı sürüklenir, yana kaydırılınca palet kayar). */
 @media (max-width: 480px), (min-width: 481px) and (max-height: 480px) and (orientation: landscape) {
-  #game .code .brief { flex: 0 1 auto; min-height: 42px; overflow-y: auto; overscroll-behavior: contain; }
-  #game .code .ws, #game .code .py { min-height: 96px; }
+  #game .code .brief { flex: 0 1 auto; min-height: 66px; overflow-y: auto; overscroll-behavior: contain; }
+  #game .code .ws, #game .code .py { min-height: 86px; }
+  #game[data-mode="tahmin"] .code .brief { min-height: 0; }
   #game .code .pal { max-height: none; overflow: hidden; padding: 6px 0 6px 6px; }
   #game .palrow, #game .palrow.dense { display: grid; grid-auto-flow: column; grid-template-rows: repeat(2, auto); justify-content: start; gap: 5px;
     overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; padding-right: 22px;
@@ -698,6 +707,7 @@ button.node:not(.locked):active { transform: scale(.92); }
 @media (min-width: 481px) and (max-height: 480px) and (orientation: landscape) {
   #game { --side-code: min(52vw, 420px); }
   #game .code .ws, #game .code .py { min-height: 84px; }
+  #game .code .brief { min-height: 42px; }
   #game .palrow .blk, #game .palrow.dense .blk { height: 26px; padding-inline: 6px; gap: 4px; font-size: 11.5px; }
   #game .palrow .blk .bi { width: 12px; height: 12px; }
   #game .ws .blk { height: 32px; padding-inline: 10px; gap: 6px; font-size: 14px; }
@@ -711,6 +721,8 @@ button.node:not(.locked):active { transform: scale(.92); }
 @media (max-width: 360px) {
   #game .code .ws, #game .code .py { min-height: 76px; }
   #game .code .brief { min-height: 58px; }
+  /* Kavram etiketi gizlenir: dalga sayıları başlık satırına sığsın, görev metni görünsün. */
+  #game .brief .chip { display: none; }
   #game .meta .clear { padding: 0 6px; }
 }
 
