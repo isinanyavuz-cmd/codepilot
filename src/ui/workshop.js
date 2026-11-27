@@ -40,7 +40,7 @@ export class Workshop {
       else if (act === 'clear') this.touch(blankField(this.lanes, this.rows), 0);   // eski çözüm programı da silinir
       else if (act === 'play') this.play();
       else if (act === 'share') this.share();
-    }, 'wide');
+    }, 'wide', { close: 'close' });
     card.addEventListener('click', (e) => {
       const cell = e.target.closest('[data-cell]'), tool = e.target.closest('[data-piece]'), size = e.target.closest('[data-size]'), copy = e.target.closest('[data-copy]');
       if (cell) { const [lane, y] = cell.dataset.cell.split(',').map(Number); this.paint(lane, y); }

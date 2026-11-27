@@ -57,6 +57,7 @@ export class Game {
       if (b && !b.classList.contains('locked') && b.dataset.level !== this.level.id) { sfx.click(); this.open(LEVELS.find((l) => l.id === b.dataset.level)); }
     });
     $('scrubRange').addEventListener('input', (e) => this.scrubTo(Number(e.target.value)));
+    this.bindDrawer();
     for (const id of ['quizBtns', 'picks']) $(id).addEventListener('click', (e) => { const b = e.target.closest('[data-pick]'); if (b) this.pickAnswer(Number(b.dataset.pick)); });
     $('speakBtn').hidden = !voice.supported;
     $('speakBtn').addEventListener('click', () => { sfx.click(); voice.say(`${this.level.title}. ${this.level.brief}`, { force: true }); });
@@ -77,7 +78,7 @@ export class Game {
     this.quiz = level.tahmin ? { score: [], python: !!level.python } : null;
     $('game').dataset.mode = level.tahmin ? 'tahmin' : '';
     $('quizBar').hidden = !this.quiz; $('picks').replaceChildren();
-    $('game').hidden = false;
+    $('game').hidden = false; $('game').dataset.drawer = '';
     // Serbest görevler (günün dalgası, atölye) bir sektöre bağlı değildir: şerit gizlenir, başlık görevin adıdır.
     $('sectorNo').textContent = level.free ? EXTRA_LABEL[level.extra] : `SEKTÖR ${sector.id}`;
     $('sectorName').textContent = level.extra === 'gunluk' ? dayTitle(level.day) : level.free ? level.title : sector.name;
@@ -174,21 +175,54 @@ export class Game {
   layout() {
     if ($('game').hidden) return;
     const phone = window.matchMedia('(max-width: 480px)').matches;
-    const toast = $('toast'), feedback = phone ? $('mobileFeedback') : $('game');
-    if (toast.parentElement !== feedback) feedback.append(toast);
+    // Telefonda (dik ya da yatay) Bip'in balonu uçuş alanının üstüne biner: panelin içine girip
+    // Uçur düğmesini ekran dışına itmez, yatayda da alanın genişliğini aşmaz.
+    const compact = phone || window.matchMedia('(max-height: 480px) and (orientation: landscape)').matches;
+    const toast = $('toast');
     const W = window.innerWidth, H = window.innerHeight, p = $('panel').getBoundingClientRect();
     const stacked = p.width > W * 0.8;
     const top = $('track').offsetParent ? 100 : 76;
     const telemetry = $('telemetry').hidden ? null : $('telemetry').getBoundingClientRect();
-    const stageTop = phone ? Math.max($('sectorName').getBoundingClientRect().bottom, $('hud').getBoundingClientRect().bottom, telemetry?.bottom ?? 0) + 8
+    const stageTop = phone ? Math.max($('game').querySelector('.top').getBoundingClientRect().bottom, $('hud').getBoundingClientRect().bottom, telemetry?.bottom ?? 0) + 8
       : stacked && telemetry ? telemetry.bottom + 8 : stacked ? 66 : top;
     const stageBottom = stacked ? p.top - 4 : telemetry ? telemetry.top - 8 : H - 6;
     this.rect = { x: 0, y: stageTop, w: stacked ? W : p.left - 6, h: Math.max(120, stageBottom - stageTop) };
     this.view.setRect(this.rect);
-    toast.style.left = phone ? '' : `${this.rect.x + this.rect.w / 2}px`;
+    this.compact = compact; toast.classList.toggle('docked', compact);
+    if (compact) {
+      const y = phone ? stageTop : Math.max(stageTop, $('game').querySelector('.top').getBoundingClientRect().bottom + 8);
+      Object.assign(toast.style, { left: `${this.rect.x + 8}px`, top: `${y}px`, width: `${this.rect.w - 16}px`, maxHeight: `${Math.max(90, Math.min(170, this.rect.y + this.rect.h - y - 60))}px` });
+    } else Object.assign(toast.style, { left: `${this.rect.x + this.rect.w / 2}px`, top: '', width: '', maxHeight: '' });
     const scrub = $('scrub').style;
     scrub.right = `${W - this.rect.x - this.rect.w + 14}px`; scrub.top = `${this.rect.y + this.rect.h - (stacked ? 44 : 52)}px`;
     if (this.quiz?.choices) this.renderPicks();
+  }
+
+  /**
+   * Telefon çekmecesi: panelin tutamağına dokununca ya da yukarı çekince program alanı büyür,
+   * aşağı çekince küçülür. Uçur'a basınca kendiliğinden küçülür, uçuş alanı görünür.
+   */
+  bindDrawer() {
+    const btn = $('drawerBtn');
+    let y0 = null, moved = false;
+    btn.addEventListener('pointerdown', (e) => { y0 = e.clientY; moved = false; btn.setPointerCapture?.(e.pointerId); });
+    btn.addEventListener('pointermove', (e) => {
+      if (y0 === null || moved) return;
+      const dy = e.clientY - y0;
+      if (Math.abs(dy) > 24) { moved = true; this.setDrawer(dy < 0); }
+    });
+    btn.addEventListener('pointerup', () => { y0 = null; });
+    btn.addEventListener('click', () => { if (moved) { moved = false; return; } this.sfx.click(); this.setDrawer(!this.drawerOpen); });
+    $('panel').addEventListener('transitionend', (e) => { if (e.target === $('panel') && e.propertyName === 'height') this.layout(); });
+  }
+  get drawerOpen() { return $('game').dataset.drawer === 'open'; }
+  setDrawer(open) {
+    if (open === this.drawerOpen) return;
+    $('game').dataset.drawer = open ? 'open' : '';
+    const btn = $('drawerBtn');
+    btn.setAttribute('aria-expanded', String(open));
+    btn.setAttribute('aria-label', open ? 'Program alanını küçült' : 'Program alanını büyüt');
+    this.layout();
   }
 
   renderTrack() {
@@ -201,6 +235,12 @@ export class Game {
       if (i < levels.length - 1) parts.push(`<div class="seg ${done ? 'done' : ''}"></div>`);
     });
     $('track').innerHTML = parts.join('');
+    // Dar ekranda büyük şerit yerine başlığın altında küçük bir görev şeridi: nerede olduğunu gösterir.
+    $('miniTrack').hidden = !!this.level.free;
+    $('miniTrack').innerHTML = this.level.free ? '' : levels.map((l) => {
+      const done = this.store.stars(l.id) > 0 || (!!l.alt && this.store.stars(l.alt) > 0);
+      return `<i class="${l.id === this.level.id ? 'cur' : done ? 'done' : ''} ${l.n === 8 ? 'boss' : ''}"></i>`;
+    }).join('');
   }
 
   /** Dalga düğmeleri: geçilen yeşil, uçulan sarı, takılınan kırmızı; uçuş yokken ekrandaki dalga beyaz çerçeveli. */
@@ -351,7 +391,7 @@ export class Game {
   }
 
   start(step) {
-    this.reset();
+    this.reset(); this.setDrawer(false);
     // Uçuş hep ilk dalgadan başlar; ekranda başka bir dalga duruyorsa önce ilkine dönülür.
     if (this.wave !== 0) { this.wave = 0; this.setScene(0); }
     this.stepMode = step; this.results = [];
@@ -1032,6 +1072,10 @@ export class Game {
         el.classList.toggle('right', place === 'right');
         el.style.left = `${place === 'left' ? cell.left - 26 : cell.right + 26}px`; el.style.top = `${cell.y}px`;
       }
+      // Son güvence: balon uçuş alanının kenarından taşıyorsa (panelin altına ya da ekran dışına) içeri kaydırılır.
+      const b = el.getBoundingClientRect(), lo = r.x + 6, hi = Math.min(window.innerWidth, r.x + r.w) - 6;
+      const shift = b.left < lo ? lo - b.left : b.right > hi ? hi - b.right : 0;
+      if (shift) el.style.left = `${parseFloat(el.style.left) + shift}px`;
     }
   }
   hideCall() { $('calls').replaceChildren(); this.view.hideSense(); }
@@ -1052,7 +1096,7 @@ export class Game {
    */
   showToast(kind, text, { sub = '', mood = null, buttons = [], quiet = false } = {}) {
     const el = $('toast');
-    el.className = `toast glass ${kind}`;
+    el.className = `toast glass ${kind} ${this.compact ? 'docked' : ''}`;
     el.innerHTML = `${robot(mood || (kind === 'bad' ? 'sad' : kind === 'good' ? 'happy' : 'idle'))}<div class="say">${rich(text)}${sub ? `<span class="hint">${rich(sub)}</span>` : ''}</div>`;
     if (buttons.length) {
       const box = document.createElement('div'); box.className = 'tbtns';

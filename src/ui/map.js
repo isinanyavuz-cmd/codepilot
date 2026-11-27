@@ -18,6 +18,8 @@ const svg = (id, cls = '') => `<svg viewBox="0 0 32 32" class="${cls}"><use href
 const SURUM = document.querySelector('meta[name="surum"]')?.content || '';
 const rich = (text) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
 const NS = 'http://www.w3.org/2000/svg';
+// Haritadaki yan görev düğmelerinin altındaki kısa etiket: ne olduğu dokunmadan anlaşılsın.
+const SIDE_TAG = { gizli: 'gizli', acil: 'acil', catal: 'öteki yol', tahmin: 'tahmin', python: 'Python', silah: 'silah' };
 
 export class MapScreen {
   constructor({ store, sfx, music, voice, hangar, workshop, parent, onOpen }) {
@@ -37,15 +39,16 @@ export class MapScreen {
       store.voice = !store.voice; voice.enabled = store.voice; this.renderToggles(); sfx.click();
       if (store.voice) voice.say('Sesli okuma açık. Görevleri sana ben okuyacağım.');
     });
-    // Köprü: rota ekranının altındaki çubuk. Yeni ekranlar buraya eklenir.
+    // Köprü: rota ekranının altındaki çubuk; telefonda da sığsın diye dört öğe. Mürettebat Hangar'ın
+    // içinde, Pilotlar ve Veli paneli üst köşedeki pilot düğmesinde.
+    hangar.onCrew = () => this.showCrew();
+    $('profileBtn').addEventListener('click', () => { sfx.click(); this.showProfile(); });
+    $('continueBtn').addEventListener('click', () => { const next = this.current(); if (next) { sfx.click(); onOpen(next); } });
     this.dock = [
-      { id: 'crew', icon: 'i-crew', label: 'Müret­tebat', run: () => this.showCrew() },
       { id: 'hangar', icon: 'i-ship', label: 'Hangar', run: () => { hangar.open(); this.renderDock(); }, badge: () => hangar.fresh() },
       { id: 'daily', icon: 'i-sun', label: 'Günün Dalgası', run: () => this.openDaily(), badge: () => (store.daily(dayOf()) ? '' : '!') },
       { id: 'workshop', icon: 'i-tool', label: 'Atölye', run: () => workshop.open() },
       { id: 'log', icon: 'i-book', label: 'Günlük', run: () => this.showLog() },
-      { id: 'pilots', icon: 'i-pilot', label: 'Pilotlar', run: () => this.showPilots() },
-      { id: 'parent', icon: 'i-lock', label: 'Veli', run: () => parent.open() },
     ];
     $('dock').addEventListener('click', (e) => {
       const b = e.target.closest('[data-dock]'), item = b && this.dock.find((d) => d.id === b.dataset.dock);
@@ -60,6 +63,27 @@ export class MapScreen {
     $('soundBtn').classList.toggle('off', !this.store.sound);
     $('musicBtn').classList.toggle('off', !this.store.music);
     $('voiceBtn').classList.toggle('off', !this.store.voice);
+  }
+
+  /** Pilot düğmesi: pilot değiştirme, veli paneli ve ses ayarları (telefonda üst çubuğa sığmayanlar). */
+  showProfile() {
+    const { store } = this, me = store.profiles().find((p) => p.active);
+    const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+    const toggle = (act, icon, label, on) => `<button class="btn toggle ${on ? 'on' : ''}" data-act="${act}" aria-pressed="${on}">${svg(icon)}${label}<i>${on ? 'açık' : 'kapalı'}</i></button>`;
+    const card = makeCard(`<span class="tag">PİLOT</span><h1>${esc(me?.name || 'Pilot')}</h1>
+      <div class="menu">
+        <button class="btn" data-act="pilots">${svg('i-pilot')}Pilotlar<i>pilot değiştir ya da ekle</i></button>
+        <button class="btn" data-act="parent">${svg('i-lock')}Veli paneli<i>rapor ve kayıt</i></button>
+        ${toggle('sound', 'i-sound', 'Ses efektleri', store.sound)}${toggle('music', 'i-music', 'Müzik', store.music)}${this.voice.supported ? toggle('voice', 'i-speak', 'Sesli okuma', store.voice) : ''}
+      </div>
+      <div class="btns"><button class="btn primary" data-act="close">Tamam</button></div>`, (act) => {
+      if (act === 'pilots') { this.sfx.click(); this.showPilots(); return; }
+      if (act === 'parent') { this.sfx.click(); this.parent.open(); return; }
+      if (act === 'close') { this.sfx.click(); hideCard(); return; }
+      $(`${act}Btn`).click();
+      this.showProfile();
+    }, '', { close: 'close' });
+    showCard(card);
   }
 
   renderDock() {
@@ -77,7 +101,7 @@ export class MapScreen {
     showCard(makeCard(`<span class="tag">${SHIP.toLocaleUpperCase('tr')} MÜRETTEBATI · ${found} / ${CREW.length}</span><h1>Köprü</h1>
       <ul class="crew">${people}</ul>
       <div class="bots"><small>BİP'İN ARKADAŞLARI · gizli görevlerde saklanıyorlar</small><div>${bots}</div></div>
-      <div class="btns"><button class="btn primary" data-act="close">Tamam</button></div>`, () => { this.sfx.click(); hideCard(); }, 'wide'));
+      <div class="btns"><button class="btn primary" data-act="close">Tamam</button></div>`, () => { this.sfx.click(); hideCard(); }, 'wide', { close: 'close' }));
   }
 
   /**
@@ -92,7 +116,7 @@ export class MapScreen {
       <p class="fine">Her pilotun yıldızları, programları ve gemisi ayrı saklanır.</p>
       <ul class="pilots">${rows}</ul>
       ${list.length < 6 ? '<form class="newpilot"><input id="pilotName" maxlength="24" placeholder="Yeni pilotun adı" aria-label="Yeni pilotun adı" autocomplete="off"><button class="btn" type="submit">Ekle</button></form>' : ''}
-      <div class="btns"><button class="btn primary" data-act="close">Kapat</button></div>`, () => { this.sfx.click(); hideCard(); });
+      <div class="btns"><button class="btn primary" data-act="close">Kapat</button></div>`, () => { this.sfx.click(); hideCard(); }, '', { close: 'close' });
     const restart = () => { location.hash = ''; location.reload(); };
     card.addEventListener('click', (e) => {
       const b = e.target.closest('[data-pilot]');
@@ -161,7 +185,7 @@ export class MapScreen {
     }).join('')}</ul>`).join('');
     showCard(makeCard(`<div class="who">${robot('idle')}<span class="tag">KAPTAN GÜNLÜĞÜ</span></div><h1>Uçuş kayıtların</h1>
       ${rows ? `<div class="loglist">${rows}</div>` : '<p>Henüz kayıt yok. İlk görevini geçince burada görünecek.</p>'}
-      <div class="btns"><button class="btn primary" data-act="close">Tamam</button></div>`, () => { this.sfx.click(); hideCard(); }));
+      <div class="btns"><button class="btn primary" data-act="close">Tamam</button></div>`, () => { this.sfx.click(); hideCard(); }, '', { close: 'close' }));
   }
   hide() { $('map').hidden = true; cancelAnimationFrame(this.raf); }
 
@@ -187,6 +211,9 @@ export class MapScreen {
     const ys = [H - 210];
     heights.forEach((h, i) => ys.push(ys[i] - h));
     const cur = this.current();
+    const cont = $('continueBtn');
+    cont.hidden = !cur;
+    if (cur) cont.innerHTML = `<span><b>Devam et</b><small>${cur.title}</small></span>${svg('i-play')}`;
 
     // yol parçaları: her sektörün gezegeninden bir sonrakine (sonuncusu hedef gezegene)
     const root = document.createElementNS(NS, 'svg');
@@ -249,7 +276,8 @@ export class MapScreen {
         root.append(line);
         const cls = ['node', st ? 'done' : '', unlocked ? '' : 'locked'].join(' ');
         const inner = !unlocked ? svg('i-lock') : x.extra === 'gizli' ? '?' : x.extra === 'catal' ? svg('i-fork') : x.extra === 'tahmin' ? (x.python ? 'Py' : svg('i-eye')) : x.extra === 'silah' ? svg(x.tools.includes('beam') ? 'i-beam' : 'i-laser') : '!';
-        const under = unlocked ? `<div class="mstars">${[1, 2, 3].map((n) => svg('i-star', n <= st ? 'lit' : '')).join('')}</div>` : `<small>${SECRET_STARS}${svg('i-star')}</small>`;
+        const tag = `<em class="sidetag">${SIDE_TAG[x.python ? 'python' : x.extra] || ''}</em>`;
+        const under = tag + (unlocked ? `<div class="mstars">${[1, 2, 3].map((n) => svg('i-star', n <= st ? 'lit' : '')).join('')}</div>` : `<small>${SECRET_STARS}${svg('i-star')}</small>`);
         html.push(`<div class="mn side ${x.extra}" style="left:${sx}px;top:${sy}px"><button class="${cls}" data-level="${x.id}" title="${x.title}" aria-label="${EXTRA_LABEL[x.extra]}: ${x.title}">${inner}</button>${under}</div>`);
       }
     });

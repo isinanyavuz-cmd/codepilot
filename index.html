@@ -11,8 +11,8 @@
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <title>Kod Pilotu</title>
-<link rel="stylesheet" href="css/style.css?v=2317b08a">
-<meta name="surum" content="3f54e2e">
+<link rel="stylesheet" href="css/style.css?v=cc600696">
+<meta name="surum" content="0130db5">
 <script type="importmap">
 {
  "imports": {
@@ -39,16 +39,16 @@
   "./src/storage.js": "./src/storage.js?v=3117dba3",
   "./src/ui/copilot.js": "./src/ui/copilot.js?v=514243d9",
   "./src/ui/editor.js": "./src/ui/editor.js?v=99c517f4",
-  "./src/ui/game.js": "./src/ui/game.js?v=8b4810cc",
-  "./src/ui/hangar.js": "./src/ui/hangar.js?v=0dd951e3",
-  "./src/ui/map.js": "./src/ui/map.js?v=fa620bfb",
-  "./src/ui/overlay.js": "./src/ui/overlay.js?v=708adda0",
-  "./src/ui/parent.js": "./src/ui/parent.js?v=ea8eaf99",
+  "./src/ui/game.js": "./src/ui/game.js?v=8af33048",
+  "./src/ui/hangar.js": "./src/ui/hangar.js?v=e8455007",
+  "./src/ui/map.js": "./src/ui/map.js?v=21f542c6",
+  "./src/ui/overlay.js": "./src/ui/overlay.js?v=ddb095f4",
+  "./src/ui/parent.js": "./src/ui/parent.js?v=8ee625bb",
   "./src/ui/sfx.js": "./src/ui/sfx.js?v=5735ada5",
   "./src/ui/shipart.js": "./src/ui/shipart.js?v=4c8f3755",
   "./src/ui/voice.js": "./src/ui/voice.js?v=d72eaa04",
   "./src/ui/warp.js": "./src/ui/warp.js?v=81540237",
-  "./src/ui/workshop.js": "./src/ui/workshop.js?v=b23661b3",
+  "./src/ui/workshop.js": "./src/ui/workshop.js?v=156822a9",
   "./vendor/three.bundle.min.js": "./vendor/three.bundle.min.js?v=0622f3b8"
  }
 }
@@ -67,9 +67,11 @@
       <button class="iconbtn" id="voiceBtn" aria-label="Sesli okuma"><svg viewBox="0 0 32 32"><use href="#i-speak"/></svg></button>
       <button class="iconbtn" id="musicBtn" aria-label="Müzik"><svg viewBox="0 0 32 32"><use href="#i-music"/></svg></button>
       <button class="iconbtn" id="soundBtn" aria-label="Ses efektleri"><svg viewBox="0 0 32 32"><use href="#i-sound"/></svg></button>
+      <button class="iconbtn" id="profileBtn" aria-label="Pilotlar ve veli paneli"><svg viewBox="0 0 32 32"><use href="#i-pilot"/></svg></button>
     </div>
   </header>
   <div class="route" id="route"></div>
+  <button class="big go cont" id="continueBtn" hidden></button>
   <nav class="dock glass" id="dock" aria-label="Köprü"></nav>
 </section>
 
@@ -77,7 +79,7 @@
 <section id="game" class="screen" hidden>
   <div class="top">
     <button class="back" id="backBtn" aria-label="Rotaya dön"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M20 6L10 16l10 10" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Rota</span></button>
-    <div class="ttl"><small id="sectorNo">SEKTÖR 1</small><b id="sectorName">Kalkış</b></div>
+    <div class="ttl"><small id="sectorNo">SEKTÖR 1</small><b id="sectorName">Kalkış</b><div class="minitrack" id="miniTrack" aria-hidden="true"></div></div>
   </div>
   <button class="iconbtn gsnd" id="gameSoundBtn" aria-label="Sesi kapat/aç"><svg viewBox="0 0 32 32"><use href="#i-sound"/></svg></button>
   <button class="iconbtn gcam" id="camBtn" aria-label="Pilot kamerası"><svg viewBox="0 0 32 32"><use href="#i-cam"/></svg></button>
@@ -86,13 +88,13 @@
   <div class="telemetry glass" id="telemetry" aria-live="polite" hidden></div>
 
   <aside class="code glass" id="panel">
+    <button class="drawer" id="drawerBtn" aria-label="Program alanını büyüt" aria-expanded="false" aria-controls="panel"><i></i></button>
     <div class="brief">
       <div class="row"><span class="lab" id="missionNo">GÖREV 1 / 8</span><span class="chip" id="conceptChip">Sıralama</span><button class="mini speak" id="speakBtn" aria-label="Görevi sesli oku"><svg viewBox="0 0 32 32"><use href="#i-speak"/></svg></button></div>
       <h2 id="missionTitle" tabindex="-1"></h2>
       <p id="missionText"></p>
       <div class="wavebar" id="waveBar" hidden><span class="waves" id="waves"></span><span class="note" id="waveNote"></span></div>
     </div>
-    <div id="mobileFeedback"></div>
     <div class="tabrow">
       <div class="tabs" id="tabs"><button class="on" data-tab="blocks">Blok</button><button data-tab="python">Python</button></div>
       <div class="meta">

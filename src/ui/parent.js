@@ -61,7 +61,7 @@ export class ParentPanel {
       <div class="btns"><button class="btn" data-act="move">İlerlemeyi aktar</button><button class="btn" data-act="reset">Sıfırla</button><button class="btn primary" data-act="close">Kapat</button></div>`, (act) => {
       this.sfx.click();
       if (act === 'move') this.transfer(); else if (act === 'reset') this.confirmReset(); else hideCard();
-    }, 'wide parent');
+    }, 'wide parent', { close: 'close' });
     showCard(card);
   }
 

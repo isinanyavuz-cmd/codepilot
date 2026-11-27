@@ -45,10 +45,10 @@ export class Hangar {
       <p class="fine">${next ? `Sıradaki rütbe <b>${next.name}</b>: ${next.need} yıldız kaldı.` : 'En yüksek rütbedesin!'}${upcoming ? ` Yeni parça: <b>${upcoming.option.name}</b> (${upcoming.label.toLocaleLowerCase('tr')}) için ${upcoming.need} yıldız.` : ''}</p>
       <div class="hangar"><div class="preview" id="hgPreview"></div><div class="parts" id="hgParts"></div></div>
       <div class="patches"><small>SEKTÖR ARMALARI</small><div>${patches}</div></div>
-      <div class="btns">${hasLib ? `<button class="btn" data-act="lib">${svg('i-fn')}Kitaplığım</button>` : ''}<button class="btn" data-act="cert">${svg('i-star')}Sertifika</button><button class="btn primary" data-act="close">Tamam</button></div>`, (act) => {
+      <div class="btns">${hasLib ? `<button class="btn" data-act="lib">${svg('i-fn')}Kitaplığım</button>` : ''}<button class="btn" data-act="cert">${svg('i-star')}Sertifika</button>${this.onCrew ? `<button class="btn" data-act="crew">${svg('i-crew')}Mürettebat</button>` : ''}<button class="btn primary" data-act="close">Tamam</button></div>`, (act) => {
       this.sfx.click();
-      if (act === 'lib') this.openLibrary(); else if (act === 'cert') this.openCertificate(); else hideCard();
-    }, 'wide');
+      if (act === 'lib') this.openLibrary(); else if (act === 'cert') this.openCertificate(); else if (act === 'crew') this.onCrew(); else hideCard();
+    }, 'wide', { close: 'close' });
     card.addEventListener('click', (e) => { const pick = e.target.closest('[data-part]'); if (pick) this.pick(pick.dataset.part, pick.dataset.option); });
     showCard(card);
     this.renderParts();
@@ -84,7 +84,7 @@ export class Hangar {
     const card = makeCard(`<div class="who">${robot('happy')}<span class="tag">OTOPİLOT KİTAPLIĞIN</span></div><h1>Senin manevraların</h1>
       <p>Kazandığın görevlerde yazdığın manevralar burada saklanır. Final görevlerinde onları <b>yeniden tanımlamadan</b> çağırabilirsin.</p>
       <div class="libgrid"></div>
-      <div class="btns"><button class="btn primary" data-act="back">Hangara dön</button></div>`, () => { this.sfx.click(); this.open(); }, 'wide');
+      <div class="btns"><button class="btn primary" data-act="back">Hangara dön</button></div>`, () => { this.sfx.click(); this.open(); }, 'wide', { close: 'back' });
     const grid = card.querySelector('.libgrid');
     for (const name of names) {
       const box = document.createElement('div'); box.className = 'demo';
@@ -119,7 +119,7 @@ export class Hangar {
       const page = document.createElement('div'); page.className = 'printsheet'; page.innerHTML = sheet();
       document.body.append(page);
       window.print();
-    }, 'wide');
+    }, 'wide', { close: 'back' });
     card.querySelector('#certName').addEventListener('input', (e) => { store.name = e.target.value; card.querySelector('#certBox').innerHTML = sheet(); });
     showCard(card);
   }
