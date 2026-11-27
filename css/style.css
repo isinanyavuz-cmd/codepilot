@@ -110,12 +110,13 @@ button.node:not(.locked):active { transform: scale(.92); }
 .tabs { display: flex; background: rgba(255, 255, 255, .06); padding: 4px; border-radius: 12px; gap: 2px; }
 .tabs button { font-size: 13.5px; font-weight: 700; padding: 6px 13px; border-radius: 9px; color: var(--soft); }
 .tabs .on { background: rgba(255, 255, 255, .14); color: #fff; }
-.meta { display: flex; align-items: center; gap: 8px; }
+.meta { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .mini { width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center; background: rgba(255, 255, 255, .08); color: #cfd9ff; }
 .mini svg { width: 16px; height: 16px; }
 .mini:disabled { opacity: .35; cursor: default; }
 .mini.clear { width: auto; padding: 0 9px; font-size: 12px; font-weight: 800; }
-.counter { display: flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 700; color: var(--soft); white-space: nowrap; }
+/* Sayaç panele sığmazsa hedef ("en çok N") alt satıra iner; panelden taşmaz. */
+.counter { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 2px 5px; font-size: 13px; font-weight: 700; color: var(--soft); white-space: nowrap; }
 .counter b { color: #fff; }
 .counter .goal { display: flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 9px; background: rgba(255, 255, 255, .07); }
 .counter .goal svg { width: 14px; height: 14px; color: rgba(150, 170, 230, .5); }
@@ -618,7 +619,7 @@ button.node:not(.locked):active { transform: scale(.92); }
 @media (max-width: 1280px) {
   :root { --panel: 380px; } .track .seg { width: 24px; } .track { left: 330px; }
   /* Dar panelde iki basamaklı blok sayıları ("0 / 14 blok", "en çok 13") satıra sığsın. */
-  .tabs button { padding: 6px 8px; } .meta { gap: 5px; } .counter { font-size: 12.5px; flex-direction: column; align-items: flex-start; gap: 1px; } .counter .goal { padding: 1px 6px; }
+  .tabs button { padding: 6px 8px; } .meta { gap: 5px; } .counter { font-size: 12.5px; flex-direction: column; flex-wrap: nowrap; align-items: flex-start; gap: 1px; } .counter .goal { padding: 1px 6px; }
 }
 @media (max-width: 1100px) {
   .track { display: none; } :root { --panel: 350px; }
@@ -685,7 +686,7 @@ button.node:not(.locked):active { transform: scale(.92); }
   .tabrow, .meta { gap: 4px; }
   .meta .mini { min-height: 40px; }
   .tabs button { padding: 5px 8px; }
-  .counter { font-size: 11px; flex-direction: column; gap: 0; align-items: flex-start; }
+  .counter { font-size: 11px; flex-direction: column; flex-wrap: nowrap; gap: 0; align-items: flex-start; }
   .counter .goal { padding: 1px 4px; }
   .ctrl { gap: 6px; }
   #runBtn { height: 40px; min-width: 0; width: auto; flex: 0 1 auto; max-width: min(34%, 124px); margin-inline-end: auto; padding: 0 14px; font-size: 15px; gap: 6px; }
@@ -735,7 +736,7 @@ button.node:not(.locked):active { transform: scale(.92); }
     -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 22px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 22px), transparent); }
   #game .palrow::-webkit-scrollbar { display: none; }
   #game .palrow .blk, #game .palrow .cond { touch-action: pan-x; }
-  #game .counter { font-size: 11px; flex-direction: column; gap: 0; align-items: flex-start; }
+  #game .counter { font-size: 11px; flex-direction: column; flex-wrap: nowrap; gap: 0; align-items: flex-start; }
   #game .counter .goal { padding: 1px 4px; }
 }
 @media (min-width: 481px) and (max-height: 480px) and (orientation: landscape) {
@@ -810,6 +811,15 @@ button.node:not(.locked):active { transform: scale(.92); }
   .big.cont { bottom: 80px; height: 54px; }
   #map { padding-bottom: 160px; }
   .mapstats #musicBtn, .mapstats #voiceBtn { display: none; }
+}
+/* Kısa telefon ekranı (adres çubuklu tarayıcı): alan açıklaması gizlenir, gösterge tek satır kalır; uçuş alanına yer açılır. */
+@media (max-width: 480px) and (max-height: 620px) { #game .telemetry .field-key { display: none; } }
+/* Yatay telefon: sektör adı kesilmesin diye "Rota" yazısı gizlenir, ad iki satıra inebilir. */
+@media (min-width: 481px) and (max-height: 480px) and (orientation: landscape) {
+  #game .back { width: 44px; padding: 0; }
+  #game .back span { display: none; }
+  #game .ttl b { font-size: 17px; line-height: 1.13; white-space: normal; overflow-wrap: anywhere; }
+  #game .ttl small { font-size: 10.5px; }
 }
 
 /* ───────── sektörler arası geçiş (ui/warp.js) ───────── */

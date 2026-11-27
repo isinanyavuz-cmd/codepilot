@@ -91,7 +91,7 @@ export class Game {
       : `Aynı program ${this.fields.length} dalgayı da geçmeli.<span class="more"> Görmek için sayıya dokun.</span>`;
     const saved = this.store.program(level.saveKey);
     const solution = this.store.showSolutions && level.solution ? level.solution() : null;
-    const program = this.quiz ? level.rounds[0].program() : solution ?? (saved ? clone(saved) : level.initial ? level.initial() : []);
+    const program = this.quiz ? level.rounds[0].program() : solution ?? (saved && saved.length ? clone(saved) : level.initial ? level.initial() : []);
     this.lib = this.libraryFor(level);
     this.editor.load(level, program, Object.keys(this.lib || {}), !!this.quiz);
     this.setTab(this.quiz?.python ? 'python' : 'blocks'); this.hideToast(); this.hideCall(); this.setStatus('idle');
@@ -182,6 +182,15 @@ export class Game {
     const W = window.innerWidth, H = window.innerHeight, p = $('panel').getBoundingClientRect();
     const stacked = p.width > W * 0.8;
     const top = $('track').offsetParent ? 100 : 76;
+    // Dar ekranda gösterge ve alt satırdaki kristal sayacı üst çubuğun hemen altına oturur: başlık iki
+    // satıra inse ya da altına görev şeridi gelse de üstüne binmezler (sabit bir piksel değeri biniyordu).
+    const bar = $('game').querySelector('.top').getBoundingClientRect(), tele = $('telemetry'), hud = $('hud');
+    tele.style.top = hud.style.top = '';
+    if (stacked || compact) {
+      const y = `${Math.round(bar.bottom + 6)}px`;
+      if (hud.getBoundingClientRect().top > bar.top + 30) hud.style.top = y;
+      if (stacked && !tele.hidden) tele.style.top = y;
+    }
     const telemetry = $('telemetry').hidden ? null : $('telemetry').getBoundingClientRect();
     const stageTop = phone ? Math.max($('game').querySelector('.top').getBoundingClientRect().bottom, $('hud').getBoundingClientRect().bottom, telemetry?.bottom ?? 0) + 8
       : stacked && telemetry ? telemetry.bottom + 8 : stacked ? 66 : top;
