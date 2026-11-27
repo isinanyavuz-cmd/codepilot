@@ -201,12 +201,51 @@ export function makeIron(rock, rand) {
   }
 }
 
-const crystalMat = new THREE.MeshStandardMaterial({ color: 0x8ffcff, roughness: 0.12, metalness: 0.25, emissive: 0x2fd6ff, emissiveIntensity: 1.25, flatShading: true });
+// Kristalin kendi ışığı azdır: yüzleri sahne ışığını ayrı ayrı yakalar, taş bir ışık topuna dönüşmez.
+const crystalMat = new THREE.MeshStandardMaterial({ color: 0x4fd8ff, roughness: 0.16, metalness: 0.2, emissive: 0x1479c8, emissiveIntensity: 0.6, flatShading: true });
+/** Kristal: altı yüzlü kesme taş; üstte kısa taç, altta uzun sivri uç. */
 export function buildCrystal() {
-  const g = new THREE.Group();
-  const gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.3, 0), crystalMat);
-  gem.scale.set(0.82, 1.3, 0.82); g.add(gem);
+  const g = new THREE.Group(), gem = new THREE.Group();
+  const crown = new THREE.Mesh(new THREE.ConeGeometry(0.27, 0.26, 6), crystalMat); crown.position.y = 0.2;
+  const point = new THREE.Mesh(new THREE.ConeGeometry(0.27, 0.5, 6), crystalMat); point.rotation.x = Math.PI; point.position.y = -0.18;
+  gem.add(crown, point); g.add(gem);
   g.userData.gem = gem;
+  return g;
+}
+
+function boltShape() {
+  const s = new THREE.Shape(), pts = [[0.06, 0.32], [-0.17, -0.04], [-0.02, -0.04], [-0.08, -0.32], [0.17, 0.05], [0.02, 0.05]];
+  s.moveTo(pts[0][0], pts[0][1]);
+  for (const [x, y] of pts.slice(1)) s.lineTo(x, y);
+  s.closePath();
+  return s;
+}
+
+/**
+ * Yol işaretleri. İkisi de zeminde bir halkadır; üstlerinde ne olduklarını söyleyen bir simge döner:
+ *   'beacon'  mor halka: dışa doğru yayılan sinyal halkası ve bir yön kristali
+ *   'energy'  yeşil şarj istasyonu: hafif ışıklı bir zemin ve bir şimşek
+ * `userData.core` dönen simge, `userData.pulse` (yalnız işarette) yayılan halkadır.
+ */
+export function buildMarker(kind) {
+  const beacon = kind === 'beacon', color = beacon ? 0xb786ff : 0x4cffa4, g = new THREE.Group();
+  const own = (m) => { m.userData.own = true; g.add(m); return m; };
+  const ring = own(new THREE.Mesh(new THREE.TorusGeometry(0.52, 0.05, 8, 36), additive(bright(color, 1.5), 0.9)));
+  ring.rotation.x = Math.PI / 2; ring.position.y = 0.08;
+  const mat = new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.5, metalness: 0.3, roughness: 0.32, flatShading: true });
+  let core, pulse = null;
+  if (beacon) {
+    pulse = own(new THREE.Mesh(new THREE.RingGeometry(0.5, 0.57, 36), additive(bright(color, 1.2), 0.5)));
+    pulse.rotation.x = -Math.PI / 2; pulse.position.y = 0.04;
+    core = own(new THREE.Mesh(new THREE.OctahedronGeometry(0.19, 0), mat)); core.scale.set(0.8, 1.3, 0.8);
+  } else {
+    const pad = own(new THREE.Mesh(new THREE.CircleGeometry(0.47, 28), additive(color, 0.13)));
+    pad.rotation.x = -Math.PI / 2; pad.position.y = 0.03;
+    const geo = new THREE.ExtrudeGeometry(boltShape(), { depth: 0.08, bevelEnabled: false }); geo.center();
+    core = own(new THREE.Mesh(geo, mat));
+  }
+  core.position.y = 0.46;
+  g.userData = { core, pulse };
   return g;
 }
 
@@ -217,19 +256,6 @@ export function glowTexture() {
   const g = c.createRadialGradient(32, 32, 0, 32, 32, 32);
   g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.35, 'rgba(255,255,255,0.55)'); g.addColorStop(1, 'rgba(255,255,255,0)');
   c.fillStyle = g; c.fillRect(0, 0, 64, 64);
-  return new THREE.CanvasTexture(cv);
-}
-
-/** Meteorların arkasındaki hareket izi. */
-export function streakTexture() {
-  const cv = document.createElement('canvas'); cv.width = 64; cv.height = 256;
-  const c = cv.getContext('2d');
-  const g = c.createLinearGradient(0, 0, 0, 256);
-  g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(1, 'rgba(255,255,255,1)');
-  c.fillStyle = g; c.fillRect(0, 0, 64, 256);
-  const h = c.createLinearGradient(0, 0, 64, 0);
-  h.addColorStop(0, 'rgba(0,0,0,1)'); h.addColorStop(0.5, 'rgba(0,0,0,0)'); h.addColorStop(1, 'rgba(0,0,0,1)');
-  c.globalCompositeOperation = 'destination-out'; c.fillStyle = h; c.fillRect(0, 0, 64, 256);
   return new THREE.CanvasTexture(cv);
 }
 
@@ -245,9 +271,12 @@ export function beamTexture() {
 
 /**
  * Uzay arka planı: gökyüzü, bulutsu, yıldızlar ve sektöre özgü öğeler.
- * Görünüm `theme` ile belirlenir (bkz. themes.js).
+ * Görünüm `theme` ile belirlenir (bkz. themes.js). `rect` uçuş alanının ekrandaki bölgesidir:
+ * gezegen ve Atlas ona göre boyutlanır ve yerleşir (verilmezse bütün ekran). `docked`: Atlas'ın
+ * kapısı sahnede duruyorsa arka plandaki Atlas çizilmez.
  */
-export function paintBackground(W, H, rand, theme, progress = 0) {
+export function paintBackground(W, H, rand, theme, progress = 0, rect = null, docked = false) {
+  const area = rect || { x: 0, y: 0, w: W, h: H };
   const S = Math.min(2, window.devicePixelRatio || 1), cv = document.createElement('canvas');
   cv.width = Math.max(2, Math.round(W * S)); cv.height = Math.max(2, Math.round(H * S));
   const c = cv.getContext('2d'); c.scale(S, S);
@@ -275,18 +304,27 @@ export function paintBackground(W, H, rand, theme, progress = 0) {
     c.beginPath(); c.moveTo(x - 13 * s, y); c.lineTo(x + 13 * s, y); c.moveTo(x, y - 13 * s); c.lineTo(x, y + 13 * s); c.stroke();
     c.fillStyle = '#fff'; c.beginPath(); c.arc(x, y, 2.2 * s, 0, 6.283); c.fill();
   }
-  if (EXTRAS[theme.extra]) EXTRAS[theme.extra](c, W, H, rand, u, blob, progress);
-  if (theme.planet) paintPlanet(c, H, theme.planet, progress);
+  if (EXTRAS[theme.extra] && !(docked && theme.extra === 'station')) EXTRAS[theme.extra](c, W, H, rand, u, blob, progress, area);
+  if (theme.planet) paintPlanet(c, area, theme.planet, progress);
   const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
 }
 
-/** Sol kenardan görünen gezegen. Sektörde ilerledikçe (`progress` 0–1) yaklaşır: büyür ve içeri kayar. */
-function paintPlanet(c, H, { hue, ring }, progress) {
-  const R = H * (0.19 + 0.09 * progress), px = -R * (0.46 - 0.2 * progress), py = H * 0.58, hsl = (dh, s, l, a = 1) => `hsla(${hue + dh},${s}%,${l}%,${a})`;
-  const halo = c.createRadialGradient(px, py, R * 0.8, px, py, R + 80);
+/**
+ * Uçuş alanının sol kenarından görünen gezegen. Sektörde ilerledikçe (`progress` 0–1) yaklaşır:
+ * büyür ve içeri kayar. Boyu alanın bölgesine (`area`) göredir; dar ekranda görünen kısmı sınırlanır,
+ * böylece ızgaranın üstüne binmez.
+ */
+function paintPlanet(c, area, { hue, ring }, progress) {
+  // Dar bölgede (dik telefon) ızgara neredeyse bütün genişliği kaplar: gezegen küçülür ve ızgaranın
+  // daraldığı üst köşeye çekilir; halkalı gezegen daha da az içeri girer.
+  const narrow = area.w < 560, base = Math.min(area.h, area.w * 0.9), R = base * (narrow ? 0.2 + 0.07 * progress : 0.22 + 0.11 * progress);
+  const peek = Math.min(R * (0.54 + 0.2 * progress), area.w * (narrow ? (ring ? 0.11 : 0.16) : 0.2));
+  const px = area.x + peek - R, py = area.y + area.h * (narrow ? 0.36 : 0.52), hsl = (dh, s, l, a = 1) => `hsla(${hue + dh},${s}%,${l}%,${a})`;
+  const glow = R * 0.42;
+  const halo = c.createRadialGradient(px, py, R * 0.8, px, py, R + glow);
   halo.addColorStop(0, hsl(0, 90, 65, 0.34)); halo.addColorStop(1, hsl(0, 90, 65, 0));
-  c.fillStyle = halo; c.fillRect(px - R - 90, py - R - 90, (R + 90) * 2, (R + 90) * 2);
+  c.fillStyle = halo; c.fillRect(px - R - glow, py - R - glow, (R + glow) * 2, (R + glow) * 2);
   const arc = (front) => {
     c.save(); c.translate(px, py); c.rotate(-0.3); c.scale(1, 0.26);
     c.strokeStyle = hsl(10, 85, 80, front ? 0.6 : 0.28); c.lineWidth = R * 0.11;
@@ -381,9 +419,11 @@ const EXTRAS = {
     }
   },
   // Ana gemi: sol kenarda dev bir geminin gövdesi
-  station(c, W, H, rand, u, blob, progress) {
-    // Atlas her görevde biraz daha yakın görünür.
-    const s = H * (0.2 + 0.13 * progress), x = H * 0.02 - s * (0.3 - 0.3 * progress), y = H * 0.56;
+  station(c, W, H, rand, u, blob, progress, area) {
+    // Atlas her görevde biraz daha yakın görünür. Boyu uçuş alanının bölgesine göredir; burnu
+    // bölgenin beşte birini geçmez (dar ekranda ızgaranın üstüne taşmasın).
+    const base = Math.min(area.h, area.w * 0.9), s = base * (0.21 + 0.13 * progress);
+    const x = Math.min(area.x + base * 0.02 - s * (0.3 - 0.3 * progress), area.x + area.w * 0.22 - s * 1.02), y = area.y + area.h * 0.5;
     blob(x, y, s * 1.5, '210,90,255', 0.24);
     c.save(); c.translate(x, y); c.rotate(-0.24);
     const body = c.createLinearGradient(-s * 0.5, 0, s * 0.62, 0);

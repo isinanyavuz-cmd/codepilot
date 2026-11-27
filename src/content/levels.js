@@ -1,7 +1,7 @@
 // Sektörler ve sahneler. Her sektör tek bir kavram öğretir; içindeki 8 sahne
 // tanış → dene → pekiştir → hata avı → final sırasıyla ilerler.
 import { F, L, R, rep, forever, ifelse } from '../engine/blocks.js';
-import { genWaves } from './gen.js';
+import { genWaves, withCrystals, common } from './gen.js';
 import { ADVANCED_SECTORS, ADVANCED_LEVELS } from './advanced.js';
 
 export const KINDS = { tanis: 'tanış', dene: 'dene', pekistir: 'pekiştir', hata: 'hata avı', final: 'final' };
@@ -44,11 +44,19 @@ const twoSensorSwapped = () => [forever(ifelse('ahead', [ifelse('rightFree', [L(
 // Aynı mantığın aynası: önce sola bakar. O da doğru bir çözümdür, bütün dalgaları geçmelidir.
 const twoSensorLeft = () => [forever(ifelse('ahead', [ifelse('leftFree', [L()], [R()])], [F()]))];
 
-const waves1 = (seed, extra = {}) => genWaves({ lanes: 5, rows: 7, start: 2, density: 0.26, seed, solution: dodgeRight(), minDodges: 2, ...extra });
-const waves2 = (seed, extra = {}) => genWaves({
+// Dalgalardaki kristaller doğru sayılan bütün çözümlerin ortak yolundadır: uçuşu ödüllendirir, ek karar istemez.
+const waves1 = (seed, extra = {}) => withCrystals(genWaves({ lanes: 5, rows: 7, start: 2, density: 0.26, seed, solution: dodgeRight(), minDodges: 2, ...extra }), { on: [dodgeRight()] });
+// İki sensörlü dalgalarda önce sağa ve önce sola bakan çözümlerin yolu en az `n` karede ortaktır: kristaller oraya konur.
+const waves2 = (seed, extra = {}, n = 2) => withCrystals(genWaves({
   lanes: 5, rows: 8, start: 2, density: 0.3, seed, solution: twoSensor(), minDodges: 3, needBoth: true,
-  decoys: [dodgeRight(), dodgeLeft()], alts: [twoSensorLeft()], ...extra,
-});
+  decoys: [dodgeRight(), dodgeLeft()], alts: [twoSensorLeft()], accept: (lines) => common(lines, [twoSensor(), twoSensorLeft()]).length >= n, ...extra,
+}), { on: [twoSensor(), twoSensorLeft()], n });
+// Çatallı dalgalar: bazı meteorların iki yanı da boştur ve kristal soldaki yoldadır. Önce sola bakan
+// program hepsini toplar; önce sağa bakan da geçer ama çatalda öteki yana gider, kristalleri kaçırır.
+const forkWaves = (seed) => withCrystals(genWaves({
+  lanes: 5, rows: 9, start: 2, density: 0.24, seed, solution: twoSensorLeft(), minDodges: 3, needBoth: true,
+  decoys: [dodgeRight(), dodgeLeft()], alts: [twoSensor()], accept: (lines) => common(lines, [twoSensorLeft()], [twoSensor()]).length >= 3,
+}), { on: [twoSensorLeft()], off: [twoSensor()], n: 3 });
 
 const S3_TOOLS = [...MOVES, 'forever', 'ifelse'];
 
@@ -215,7 +223,7 @@ const DEFS = [
   {
     kind: 'dene', title: 'Sola da Kaçılır',
     brief: 'Bu bölgede sağ taraf tehlikeli. Meteor görünce gemi hangi yöne kaçmalı? Eksik bloğu koy.',
-    waves: genWaves({ lanes: 5, rows: 7, start: 2, density: 0.26, seed: 303, solution: dodgeLeft(), minDodges: 2, decoys: [dodgeRight()] }),
+    waves: withCrystals(genWaves({ lanes: 5, rows: 7, start: 2, density: 0.26, seed: 303, solution: dodgeLeft(), minDodges: 2, decoys: [dodgeRight()] }), { on: [dodgeLeft()] }),
     tools: S3_TOOLS, conds: ['ahead'], maxBlocks: 6, par: 4,
     initial: () => [forever(ifelse('ahead', [], [F()]))],
     solution: dodgeLeft,
@@ -238,12 +246,13 @@ const DEFS = [
     hint: '"Eğer" bloğunun içine ikinci bir "eğer" koyabilirsin. Koşulu değiştirmek için üstüne dokun.',
   },
   {
-    kind: 'pekistir', title: 'Dar Koridor',
-    brief: 'Koridor daraldı ve duvarlar da engel sayılıyor. Aynı mantık burada da çalışır mı?',
-    waves: waves2(606, { lanes: 3, start: 1, rows: 9, density: 0.3 }),
-    tools: S3_TOOLS, conds: ['ahead', 'rightFree', 'leftFree'], maxBlocks: 8, par: 6,
-    solution: twoSensor,
-    hint: 'Duvarın yanındayken "sağım boş mu?" sensörü "hayır" der.',
+    // Aynı karar ağacını bir kez daha yazdırmak yerine yeni bir soru: iki yan da boşsa hangisi?
+    kind: 'pekistir', title: 'Kristaller Solda', rev: 2,
+    brief: 'Bazı meteorların iki yanı da boş. Kristaller hep **solda**: önce **solum boş mu?** diye sor; boşsa sola, değilse sağa kaç.',
+    waves: forkWaves(626),
+    tools: S3_TOOLS, conds: ['ahead', 'leftFree', 'rightFree'], maxBlocks: 8, par: 6,
+    solution: twoSensorLeft,
+    hint: 'Önce sağa bakan program da geçer ama kristalleri kaçırır. İçteki eğer bloğunun sensörünü "solum boş mu?" yap: üst dala sola kaç, alt dala sağa kaç.',
   },
   {
     kind: 'hata', title: 'Ters Mantık',
@@ -257,7 +266,7 @@ const DEFS = [
   {
     kind: 'final', title: 'Yağmur Finali',
     brief: 'Sektör finali! Uzun ve yoğun üç dalga. Tek bir program hepsini geçmeli.',
-    waves: waves2(808, { lanes: 4, start: 1, rows: 11, density: 0.34, minDodges: 4 }),
+    waves: waves2(808, { lanes: 4, start: 1, rows: 11, density: 0.34, minDodges: 4 }, 3),
     tools: S3_TOOLS, conds: ['ahead', 'rightFree', 'leftFree'], maxBlocks: 8, par: 6,
     solution: twoSensor,
     hint: 'Önünde meteor varsa: sağın boşsa sağa, değilse sola. Yoksa düz uç.',

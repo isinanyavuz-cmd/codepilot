@@ -287,8 +287,9 @@ button.node:not(.locked):active { transform: scale(.92); }
 .gauge.shield.on { color: #7fe9ff; text-shadow: 0 0 12px rgba(94, 242, 255, .7); }
 .field-key { display: flex; gap: 4px 14px; flex-wrap: wrap; font-size: 12px; font-weight: 600; line-height: 1.5; }
 .field-key:empty { display: none; }
-.field-key span { display: flex; align-items: center; gap: 6px; }
-.field-key i { width: 9px; height: 9px; border-radius: 50%; background: currentColor; box-shadow: 0 0 7px currentColor; }
+.field-key span { white-space: nowrap; }
+.field-key em { font-style: normal; }
+.field-key i { display: inline-block; width: 9px; height: 9px; margin-right: 6px; border-radius: 50%; background: currentColor; box-shadow: 0 0 7px currentColor; }
 .legend-beacon { color: #d3b1ff; } .legend-pirate { color: #ff8d9f; } .legend-energy { color: #8bf0b6; }
 .legend-geode { color: #8ffcff; } .legend-iron { color: #b8c2d4; }
 .gauge.battery { color: #ff9aae; } .gauge.battery b { min-width: 12px; font-size: 16px; }
@@ -605,7 +606,8 @@ button.node:not(.locked):active { transform: scale(.92); }
                  background: rgba(12, 18, 44, .94); border: 1px solid rgba(255, 213, 61, .6); transition: opacity .2s; }
 .shipmark span b { color: var(--now); font-weight: 800; }
 .shipmark.flying span { opacity: 0; }
-.mapfoot { position: absolute; left: 0; right: 0; margin: 0; text-align: center; font-size: 13px; color: var(--soft); }
+/* Yayındaki sürümü ayırt eden kod: pilot kartının altında, küçük ve soluk. */
+.card .ver { margin: 12px auto -8px; font-size: 11.5px; letter-spacing: .06em; opacity: .55; }
 
 /* ───────── küçük ekranlar ───────── */
 @media (min-height: 1000px) { :root { --bz: 1.12; } }
@@ -672,8 +674,10 @@ button.node:not(.locked):active { transform: scale(.92); }
   #game .brief h2, #game .brief p { flex: 0 0 100%; order: 2; }
   #game .wavebar { order: 1; margin: 0 0 3px; padding: 3px 6px; gap: 5px; }
   #game .wavebar .note { display: none; }
-  /* Gösterge ve açıklaması yan yana: uçuş alanı yukarıdan daha az yer kaybeder. */
+  /* Gösterge ve açıklaması yan yana: uçuş alanı yukarıdan daha az yer kaybeder. Açıklama kısalır
+     ("mor halka: işaret" yerine renkli nokta ve "işaret"). */
   #game .telemetry { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 2px 10px; padding: 5px 9px; }
+  #game .field-key em { display: none; }
   .brief .row { margin-bottom: 3px; }
   .brief p { font-size: 13px; }
   .pal .pl { display: none; }

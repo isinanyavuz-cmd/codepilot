@@ -196,7 +196,8 @@ export class Game {
       : stacked && telemetry ? telemetry.bottom + 8 : stacked ? 66 : top;
     const stageBottom = stacked ? p.top - 4 : telemetry ? telemetry.top - 8 : H - 6;
     this.rect = { x: 0, y: stageTop, w: stacked ? W : p.left - 6, h: Math.max(120, stageBottom - stageTop) };
-    this.view.setRect(this.rect);
+    // Çekmece açıkken arka plan (gezegen) yerinde kalır; yalnız ızgara küçülür.
+    this.view.setRect(this.rect, !this.drawerOpen);
     this.compact = compact; toast.classList.toggle('docked', compact);
     if (compact) {
       const y = phone ? stageTop : Math.max(stageTop, $('game').querySelector('.top').getBoundingClientRect().bottom + 8);
@@ -470,17 +471,18 @@ export class Game {
       const cells = Array.from({ length: f.battery }, (_, i) => `<i class="${i < state.battery ? 'on' : ''}"></i>`).join('');
       gauges.push(`<div class="gauge battery ${state.battery < 1 ? 'low' : ''}">${svg('i-laser')}<div class="cells">${cells}</div><b>${state.battery}</b></div>`);
     }
-    if (f.geodes.size) key.push('<span class="legend-geode"><i></i>kristalli kaya: kır, kristali al</span>');
-    if (f.iron.size) key.push('<span class="legend-iron"><i></i>demir asteroit: lazer kıramaz</span>');
+    // Açıklamanın ilk yarısı (<em>) dar ekranda gizlenir: gösterge tek satıra iner, uçuş alanına yer kalır.
+    if (f.geodes.size) key.push('<span class="legend-geode"><i></i>kristalli kaya<em>: kır, kristali al</em></span>');
+    if (f.iron.size) key.push('<span class="legend-iron"><i></i>demir<em> asteroit: lazer kıramaz</em></span>');
     if (hasCounter) gauges.push(`<div class="gauge counter ${state.counter === null ? 'off' : ''}">${svg('i-count')}<b>sayaç = ${state.counter ?? '?'}</b></div>`);
     if (hasEnergy) {
       const cells = Array.from({ length: 9 }, (_, i) => `<i class="${i < state.energy ? 'on' : ''}"></i>`).join('');
       gauges.push(`<div class="gauge energy ${state.energy < 3 ? 'low' : ''}">${svg('i-bolt')}<div class="cells">${cells}</div><b>${state.energy}</b></div>`);
     }
     if (hasShield) gauges.push(`<div class="gauge shield ${state.shielded ? 'on' : ''}">${svg('i-shield')}<b>Kalkan ${state.shielded ? 'açık' : 'kapalı'}</b></div>`);
-    if (f.beacons.size) key.push('<span class="legend-beacon"><i></i>mor halka: işaret</span>');
-    if (f.pirates.size) key.push('<span class="legend-pirate"><i></i>kırmızı gemi: korsan</span>');
-    if (f.energyCells.size) key.push('<span class="legend-energy"><i></i>yeşil istasyon: şarj</span>');
+    if (f.beacons.size) key.push('<span class="legend-beacon"><i></i><em>mor halka: </em>işaret</span>');
+    if (f.pirates.size) key.push('<span class="legend-pirate"><i></i><em>kırmızı gemi: </em>korsan</span>');
+    if (f.energyCells.size) key.push('<span class="legend-energy"><i></i><em>yeşil istasyon: </em>şarj</span>');
     el.innerHTML = `${gauges.length ? `<div class="gauges">${gauges.join('')}</div>` : ''}<div class="field-key">${key.join('')}</div>${this.status !== 'idle' && state.message ? `<div class="flight-state">${state.message}</div>` : ''}`;
   }
 

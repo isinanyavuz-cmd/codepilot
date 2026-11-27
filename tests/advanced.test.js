@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import { parseField, simulate, sense, stars, ENERGY_MAX } from '../src/engine/world.js';
 import { F, L, R, rep, forever, ifelse, until, on, shield, setEnergy, addEnergy, define, call, clone, count, find, remove, toPython, CONTAINERS, CONDS, create } from '../src/engine/blocks.js';
 import { LEVELS, SECTORS, levelsOf, levelById } from '../src/content/levels.js';
+import { EXTRAS } from '../src/content/extras.js';
+import { route } from '../src/content/advanced.js';
 
 const run = (lines, program) => simulate(parseField(lines), program);
 const fly = (level, program) => level.waves.map((w) => simulate(parseField(w), program));
@@ -246,7 +248,52 @@ test('değişen işaret dalgaları tek bir sabit mesafeye indirgenmez', () => {
 
 test('baştan tasarlanan görevlerde eski kayıtlı program açılmaz, ötekilerde kayıt anahtarı değişmez', () => {
   for (const l of LEVELS) assert.equal(l.saveKey, l.rev ? `${l.id}@${l.rev}` : l.id);
-  assert.ok(LEVELS.filter((l) => l.sector <= 3).every((l) => !l.rev), 'ilk üç sektörün kayıtları korunur');
+  assert.deepEqual(LEVELS.filter((l) => l.sector <= 3 && l.rev).map((l) => l.id), ['3-6'], 'ilk üç sektörde yalnız baştan kurulan 3-6 yeni kayıt anahtarı alır');
+});
+
+test('her görevin alanı kendine özgüdür: aynı alan yalnız "aynı rota, yeni yazım" çiftinde tekrar eder', () => {
+  const owners = new Map();
+  for (const l of [...LEVELS, ...EXTRAS].filter((x) => !x.tahmin)) for (const w of l.waves) {
+    const key = w.join('/');
+    owners.set(key, new Set([...(owners.get(key) || []), l.id]));
+  }
+  const shared = [...owners.values()].filter((ids) => ids.size > 1).map((ids) => [...ids].join(' = '));
+  // 6-3, 6-2'nin rotasını bilerek tekrar eder: aynı yol bu kez saymadan, sensörle uçulur.
+  assert.deepEqual(shared, ['6-2 = 6-3']);
+});
+
+test('kanyon süsü çözümü değiştirmez: kayalar rotanın en az iki şerit uzağına düşer', () => {
+  const steerLoop = () => [forever(twoSensor())];
+  for (const [path, start] of [['FRLFFLRFFRLF', 2], ['LLRFRRFLFLFF', 2], ['RLRLRLFFFF', 1]]) {
+    const plain = route(path, { start }), rocky = route(path, { start, canyon: 7, fill: 1 });
+    const moves = (lines) => simulate(parseField(lines), steerLoop()).events.filter((e) => e.t === 'move').map((e) => e.kind);
+    assert.deepEqual(moves(rocky), moves(plain), path);
+    assert.equal(simulate(parseField(rocky), steerLoop()).outcome, 'win');
+    assert.deepEqual(route(path, { start, canyon: 7 }), route(path, { start, canyon: 7 }), 'tohumlu: aynı tanım hep aynı alan');
+    // Geminin bulunduğu sıradan bir üst sıraya bakan üç sensörün (ön, sağ, sol) gördüğü kareler süssüz alandakiyle aynıdır.
+    const a = parseField(plain), b = parseField(rocky);
+    let lane = start;
+    [...path].slice(0, -1).forEach((step, y) => {
+      for (const d of [-1, 0, 1]) assert.equal(b.meteors.has(`${lane + d},${y + 1}`), a.meteors.has(`${lane + d},${y + 1}`), `${path} ${y}`);
+      lane += { F: 0, L: -1, R: 1 }[step.toUpperCase()];
+    });
+    assert.ok(b.meteors.size > a.meteors.size, 'süs kaya ekler');
+  }
+});
+
+test('3-6: önce sola bakan program bütün kristalleri toplar; önce sağa bakan geçer ama kristal yıldızını alamaz', () => {
+  const level = levelById('3-6'), left = () => [forever(twoSensorLeft())], right = () => [forever(twoSensor())];
+  assert.equal(starsOf(level, left()), 3);
+  assert.equal(starsOf(level, right()), 2);
+  for (const r of fly(level, right())) { assert.equal(r.outcome, 'win'); assert.ok(r.collected < r.total, 'her dalgada kaçan kristal var'); }
+  for (const w of level.waves) assert.ok(parseField(w).crystals.size >= 2);
+});
+
+test('Sektör 3: her dalgada kristal var; kristaller doğru sayılan her çözümün yolundadır', () => {
+  for (const level of levelsOf(3)) {
+    for (const w of level.waves) assert.ok(parseField(w).crystals.size >= 1, `${level.id}: kristalsiz dalga`);
+    for (const r of fly(level, level.solution())) assert.equal(r.collected, r.total, level.id);
+  }
 });
 
 test('çok dalgalı görevlerde bir dalganın ezberi öteki dalgaları geçemez', () => {

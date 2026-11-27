@@ -1,5 +1,6 @@
 // Sektör 4–8: her görevde yeni kavramı kullanan, oynanarak doğrulanan rotalar.
 import { F, L, R, rep, forever, ifelse, until, on, shield, setEnergy, addEnergy, define, call, count, CONTAINERS } from '../engine/blocks.js';
+import { rng } from '../engine/rng.js';
 
 export const MOVES = ['fwd', 'left', 'right'];
 export const LOOPS = [...MOVES, 'repeat', 'forever', 'ifelse', 'until'];
@@ -17,7 +18,10 @@ const steerOr = () => ifelse('atBeaconOrAhead', [R()], [F()]);
 // Büyük harfli kaçışın (L, R) önüne meteor konur; böylece sensör gözle görünen engeli okur.
 // Kaçılmayan yan da kapatılır: tek yöne kaçan program geçemez, iki yana da bakan geçer.
 // Küçük harf (l, r) meteorsuz dönüştür: sensörlerin göremediği, mor halkanın haber verdiği dönüş.
-export function route(path, { start = 2, lanes = 5, beacons = [], pirates = [], energy = [], crystals = [], extra = [] } = {}) {
+// `canyon` (tohum) verilirse rotanın en az iki şerit uzağındaki boş karelere rastgele kaya serpilir.
+// O kareleri hiçbir sensör (ön, sağ, sol) görmez: kayalar çözümü değiştirmez, alanı bir asteroit
+// kanyonuna çevirir ve koridoru gözle belli eder. `fill` serpme sıklığıdır.
+export function route(path, { start = 2, lanes = 5, beacons = [], pirates = [], energy = [], crystals = [], extra = [], canyon = null, fill = 0.36 } = {}) {
   const board = Array.from({ length: path.length }, () => Array(lanes).fill('.'));
   const positions = [start];
   for (let y = 1; y < path.length; y++) {
@@ -33,6 +37,12 @@ export function route(path, { start = 2, lanes = 5, beacons = [], pirates = [], 
     if (positions[y] === lane) throw new Error('Meteor rotanın üstünde');
     board[y][lane] = 'M';
   }
+  if (canyon !== null) {
+    const next = rng(canyon);
+    for (let y = 1; y < path.length; y++) for (let lane = 0; lane < lanes; lane++) {
+      if (Math.abs(lane - positions[y - 1]) >= 2 && board[y][lane] === '.' && next() < fill) board[y][lane] = 'M';
+    }
+  }
   for (const [symbol, steps] of [['B', beacons], ['P', pirates], ['E', energy], ['K', crystals]]) {
     for (const y of steps) {
       if (y < 1 || y >= path.length || board[y][positions[y]] !== '.') throw new Error(`Nesneler çakışıyor: ${path}, ${y}`);
@@ -46,10 +56,8 @@ export function route(path, { start = 2, lanes = 5, beacons = [], pirates = [], 
 const beaconWaves = (stops = [2, 4, 6], rows = 10) => stops.map((n) => route('F'.repeat(n) + 'R' + 'F'.repeat(rows - n - 1), {
   beacons: [n], crystals: [n + 1], extra: Array.from({ length: n }, (_, i) => [3, i + 1]),
 }));
-const safePaths = ['FRLFFRLFFF', 'FLRFLRFFFF', 'RFLRFLFFFF'];
-const safeWaves = (options = {}) => safePaths.map((p) => route(p, options));
-const longPaths = ['FRLFFRLFFFFF', 'FLRFFLRFFFFF', 'RFLFFRLFFFFF'];
-const energyWaves = (options = {}) => longPaths.map((p) => route(p, { energy: [3, 6, 9], ...options }));
+/** Her yol bir dalgadır; nesneler bütün dalgalarda aynı adımlarda durur, kanyon süsü dalgadan dalgaya değişir. */
+const waves = (paths, options = {}) => paths.map((p, i) => route(p, { ...options, ...(options.canyon == null ? {} : { canyon: options.canyon + i * 97 }) }));
 // Zikzak sayısı dalgadan dalgaya değişir. Halkadan sonra sağ şerit kapalıdır: zikzağı sürdüren çarpar.
 const zigzagWaves = (counts = [2, 3, 4], rows = 10) => counts.map((n) => route('RL'.repeat(n) + 'F'.repeat(rows - 2 * n), {
   beacons: [2 * n], crystals: [2, 2 * n + 1], extra: [[3, 2 * n + 1]],
@@ -134,7 +142,8 @@ const finalSolution = (initialEnergy = 3, compound = false) => [
   on('pirate', call('protect')), on('energy', addEnergy(3)), setEnergy(initialEnergy),
   until('atBeacon', call('safe')), rep(2, F()),
 ];
-const finalWaves = () => energyWaves({ beacons: [10], pirates: [2, 5, 8], crystals: [1, 4, 7, 11] });
+// Büyük finalin ve hata avının nesneleri: üç adımda bir şarj, aralarında korsanlar, sondan bir önceki sırada mor halka.
+const FINAL_ITEMS = { energy: [3, 6, 9], beacons: [10], pirates: [2, 5, 8], crystals: [1, 4, 7, 11] };
 
 export const ADVANCED_LEVELS = [
   // ───────────── 4 · Olana kadar, VE / VEYA ─────────────
@@ -177,7 +186,7 @@ export const ADVANCED_LEVELS = [
   mission({
     kind: 'pekistir', title: 'Bulutsuda Sensörler',
     brief: 'Halkaya kadar meteorları sensörlerle aş. Sağ doluysa sola kaç. Halkadan sonra yol düz; üç dalgayı da geç.',
-    waves: safeWaves({ beacons: [7], crystals: [3, 6] }), conds: ['atBeacon', ...SENSORS],
+    waves: waves(['RLFFLRFFFF', 'LFRRFLFFFF', 'FLLFRRFFFF'], { beacons: [7], crystals: [3, 6], canyon: 46 }), conds: ['atBeacon', ...SENSORS],
     solution: () => [until('atBeacon', steer()), cruise()],
     hint: 'Olana kadar döngüsünün içine iki sensörlü karar ağacını koy.',
   }),
@@ -191,7 +200,7 @@ export const ADVANCED_LEVELS = [
   mission({
     kind: 'final', title: 'Bulutsu Finali',
     brief: 'Mor işarete kadar iki yönü de denetle: meteor **VE** sağ boşsa sağa; başka bir meteor varsa sola; yoksa düz.',
-    waves: longPaths.map((p) => route(p, { beacons: [9], crystals: [3, 6] })), conds: ['atBeacon', 'aheadAndRightFree', 'ahead'],
+    waves: waves(['RFLLFRFRFFFF', 'LFRFRFLFLFFF', 'FRLFLRRLFFFF'], { beacons: [9], crystals: [3, 6], canyon: 48 }), conds: ['atBeacon', 'aheadAndRightFree', 'ahead'],
     solution: () => [until('atBeacon', ifelse('aheadAndRightFree', [R()], [ifelse('ahead', [L()], [F()])])), cruise()],
     hint: 'VE koşulunun değilse dalına ikinci bir eğer koy: önünde meteor var mı?',
   }),
@@ -235,7 +244,7 @@ export const ADVANCED_LEVELS = [
   mission({
     kind: 'pekistir', title: 'Değişen Devriye', tools: EVENT_TOOLS, events: ['pirate'], conds: SENSORS,
     brief: 'Üç dalgada da meteorlar ve korsanlar var. Önce olayını hazırla, sonra iki sensörle güvenli yönü seç.',
-    waves: safeWaves({ pirates: [2, 5, 8], crystals: [3, 6] }),
+    waves: waves(['FRFLFLFRFF', 'LFFRFRFLFF', 'RFLFLFRRFF'], { pirates: [2, 5, 8], crystals: [3, 6], canyon: 56 }),
     solution: () => [on('pirate', shield()), forever(steer())],
     hint: 'Korsan olayı kalkanı açarken, eğer blokları meteorlar için yol seçer.',
   }),
@@ -249,7 +258,8 @@ export const ADVANCED_LEVELS = [
   mission({
     kind: 'final', title: 'Korsan Bölgesi Finali', tools: EVENT_TOOLS, events: ['pirate'], conds: ['atBeacon', ...SENSORS], boss: true,
     brief: 'Mor işarete kadar meteorları aş, sonra düz uç. Korsanlar iki tarafta da saldırabilir; olayın bütün uçuşu korusun.',
-    waves: safeWaves({ beacons: [7], pirates: [2, 5, 8], crystals: [3, 6] }),
+    // Final uzun bir devriye hattıdır: on iki sıra, dört korsan; sonuncusu çıkışın hemen önünde bekleyen kaptan.
+    waves: waves(['RFLFFLFRFFFF', 'FLFRRFLFFFFF', 'LFRFRFLLFFFF'], { beacons: [9], pirates: [2, 5, 8, 11], crystals: [3, 6, 10], canyon: 58 }),
     solution: () => [on('pirate', shield()), until('atBeacon', steer()), cruise()],
     hint: 'Korsan olayını olana kadar döngüsünün dışında, en başta kur.',
   }),
@@ -273,7 +283,7 @@ export const ADVANCED_LEVELS = [
   }),
   mission({
     kind: 'dene', title: 'İstasyona Bak', tools: ENERGY_TOOLS, conds: ['atEnergy'],
-    brief: 'Başlangıç enerjisi hazır. İstasyondaysan **3 enerji ekle ve düz uç**; değilse düz uç. Eksik dalı doldur.',
+    brief: 'Aynı rota, bu kez **saymadan**: istasyondaysan **3 enerji ekle ve düz uç**; değilse düz uç. Eksik dalı doldur.',
     waves: [route('FFFFFFFFFFFF', { energy: [3, 6, 9], crystals: [2, 5, 8, 11] })],
     initial: () => [setEnergy(3), forever(ifelse('atEnergy', [], [F()]))], solution: energyLoop,
     hint: 'Şarjdan sonra aynı dalda düz uç da olmalı; yoksa gemi istasyonda bekler.',
@@ -294,23 +304,24 @@ export const ADVANCED_LEVELS = [
     hint: 'İstasyon koşulunun içine enerji koşulunu koy. Düz uç, iki eğer bloğunun da dışında olsun.',
   }),
   mission({
-    kind: 'pekistir', title: 'Enerjili Manevralar', tools: ENERGY_TOOLS, conds: ['atEnergy', ...SENSORS],
-    brief: 'Sağa ve sola kaçış da 1 enerji harcar. İstasyonda 3 enerji ekle, sonra sensörlerle yol seç; üç dalgayı da geç.',
-    waves: energyWaves({ crystals: [2, 5, 8, 11] }),
-    solution: () => [setEnergy(3), forever(ifelse('atEnergy', [addEnergy(3)], []), steer())],
-    hint: 'Döngüde önce şarjı denetle, sonra meteorlar için manevranı seç.',
+    kind: 'pekistir', title: 'Enerjili Manevralar', tools: ENERGY_TOOLS, conds: ['atEnergy', ...SENSORS], rev: 2,
+    brief: 'Kaçışlar da 1 enerji harcar. Burada istasyonlar **dört adımda bir**: 4 enerjiyle kalk, istasyonda 4 ekle; yolu sensörler seçsin.',
+    waves: waves(['FRLFFLRFFRLF', 'LFRFRLFFLRFF', 'RLFLRFRFLFFF'], { energy: [4, 8], crystals: [2, 6, 10], canyon: 66 }),
+    solution: () => [setEnergy(4), forever(ifelse('atEnergy', [addEnergy(4)], []), steer())],
+    hint: 'İstasyonların arasını say: dört adım. Başlangıç değerini ve eklenen enerjiyi 4 yap. Döngüde önce şarjı denetle, sonra manevranı seç.',
   }),
   mission({
-    kind: 'hata', title: 'Sıfırla Kalkılmaz', tools: ENERGY_TOOLS, conds: ['atEnergy'],
-    brief: 'Şarj mantığı doğru ama gemi kalkamıyor. Enerji değişkeninin başlangıç değerini düzelt.',
-    waves: [route('FFFFFFFFFFFF', { energy: [3, 6, 9], crystals: [2, 5, 8, 11] })],
-    initial: () => [setEnergy(0), forever(ifelse('atEnergy', [addEnergy(3), F()], [F()]))], solution: energyLoop,
-    hint: 'İlk istasyon üç adım uzakta. Başlangıçta en az 3 enerji gerekli.',
+    kind: 'hata', title: 'Sıfırla Kalkılmaz', tools: ENERGY_TOOLS, conds: ['atEnergy'], rev: 2,
+    brief: 'Şarj mantığı doğru ama gemi kalkamıyor. Başlangıç değerini düzelt: ilk istasyona kaç adım var?',
+    waves: [route('FFFFFFFFFFFF', { energy: [4, 8], crystals: [2, 6, 10], canyon: 67 })],
+    initial: () => [setEnergy(0), forever(ifelse('atEnergy', [addEnergy(4), F()], [F()]))],
+    solution: () => [setEnergy(4), forever(ifelse('atEnergy', [addEnergy(4), F()], [F()]))],
+    hint: 'İlk istasyon dört adım uzakta. Başlangıçta en az 4 enerji gerekli.',
   }),
   mission({
     kind: 'final', title: 'Enerji Krizi Finali', tools: ENERGY_TOOLS, events: ['energy', 'pirate'], conds: SENSORS,
     brief: 'Şarja varınca 3 enerji ekle, korsan görünce kalkan aç. 3 enerjiyle başla; sensörler geminin yolunu seçsin.',
-    waves: energyWaves({ pirates: [2, 5, 8], crystals: [1, 4, 7, 11] }),
+    waves: waves(['RLFFLRFFRLFF', 'FLFRFRFLFLRF', 'LRFRFLLFRRFF'], { energy: [3, 6, 9], pirates: [2, 5, 8], crystals: [1, 4, 7, 11], canyon: 68 }),
     solution: () => [on('energy', addEnergy(3)), on('pirate', shield()), setEnergy(3), forever(steer())],
     hint: 'İki olay da uçuş döngüsünden önce tanımlanmalı. Her dalgada enerji baştan başlar.',
   }),
@@ -341,7 +352,7 @@ export const ADVANCED_LEVELS = [
   mission({
     kind: 'pekistir', title: 'Akıllı Bir Fonksiyon', tools: ALL_TOOLS, functions: ['safe'], conds: SENSORS,
     brief: '**Güvenli uçuş** fonksiyonunun içine iki sensörlü kararı koy. Sürekli bu fonksiyonu çağır; üç rotada da çalışmalı.',
-    waves: safeWaves({ crystals: [3, 6] }),
+    waves: waves(['RLRLFFLRLR', 'LLRRFRRLLF', 'FRRLLFLLRR'], { crystals: [3, 6], canyon: 74 }),
     solution: () => [define('safe', steer()), forever(call('safe'))],
     hint: 'Fonksiyonlar sadece hareket değil, eğer bloklarını da içerebilir.',
   }),
@@ -355,15 +366,15 @@ export const ADVANCED_LEVELS = [
   mission({
     kind: 'pekistir', title: 'Olay Fonksiyonu Çağırıyor', tools: ALL_TOOLS, functions: ['protect'], events: ['pirate'], conds: SENSORS,
     brief: '**Korunma** fonksiyonu kalkan açsın. Korsan olayı bu fonksiyonu çağırsın; uçuş döngüsü meteorlarla ilgilensin.',
-    waves: safeWaves({ pirates: [2, 5, 8], crystals: [3, 6] }),
+    waves: waves(['FLRFRLFLRF', 'RFFLLFRFRF', 'LRFRFLLFRF'], { pirates: [2, 5, 8], crystals: [3, 6], canyon: 76 }),
     solution: () => [define('protect', shield()), on('pirate', call('protect')), forever(steer())],
     hint: 'Önce korunmayı tanımla; sonra korsan olayının içine aynı adlı çağrıyı koy.',
   }),
   mission({
     kind: 'hata', title: 'Adlar Eşleşmiyor', tools: ALL_TOOLS, functions: ['zigzag', 'straight'],
     brief: 'Program tanımlanmamış bir manevrayı çağırıyor. Tanım ile çağrıların adlarını eşleştir.',
-    waves: [route('RLRLRLRL', { crystals: [2, 4, 6] })],
-    initial: () => [zigzag(), rep(4, call('straight'))], solution: () => [zigzag(), rep(4, call('zigzag'))],
+    waves: [route('RLRLRL', { start: 1, lanes: 4, crystals: [1, 3, 5] })],
+    initial: () => [zigzag(), rep(3, call('straight'))], solution: () => [zigzag(), rep(3, call('zigzag'))],
     hint: 'Tarifin adı zikzak. Çağır bloğundaki düz geçiş adını değiştir.',
   }),
   mission({
@@ -381,7 +392,7 @@ export const ADVANCED_LEVELS = [
   mission({
     kind: 'tanis', title: 'Ana Gemiye Doğru', tools: ALL_TOOLS, events: ['pirate'], conds: ['atBeacon', ...SENSORS],
     brief: 'Son sektöre hoş geldin! Sensörlü rota hazır. Korsan olayına eksik **kalkan aç** bloğunu ekle ve üç dalgayı geç.',
-    waves: safeWaves({ beacons: [7], pirates: [2, 5, 8], crystals: [3, 6] }),
+    waves: waves(['FRRFLLFFFF', 'LFLFRFRFFF', 'RLFLFRFFFF'], { beacons: [7], pirates: [2, 5, 8], crystals: [3, 6], canyon: 81 }),
     initial: () => [on('pirate'), until('atBeacon', steer()), cruise()],
     solution: () => [on('pirate', shield()), until('atBeacon', steer()), cruise()],
     hint: 'Korsan olayı hem halkaya kadar hem de halkadan sonra çalışır.',
@@ -389,7 +400,7 @@ export const ADVANCED_LEVELS = [
   mission({
     kind: 'dene', title: 'Otopilotun Beyni', tools: ALL_TOOLS, functions: ['safe'], conds: SENSORS,
     brief: 'Sürekli güvenli uçuş çağrılıyor ama tanım boş. Sensörlerle karar veren fonksiyonun içini tamamla.',
-    waves: safeWaves({ crystals: [3, 6] }),
+    waves: waves(['LRRLFLRFRL', 'RFRLLFLRFF', 'FLFLRRFRLF'], { crystals: [3, 6], canyon: 82 }),
     initial: () => [define('safe'), forever(call('safe'))],
     solution: () => [define('safe', steer()), forever(call('safe'))],
     hint: 'Fonksiyonda meteor varsa sağın boşluğunu denetle; meteor yoksa düz uç.',
@@ -397,7 +408,8 @@ export const ADVANCED_LEVELS = [
   mission({
     kind: 'dene', title: 'Otomatik Şarj', tools: ALL_TOOLS, events: ['energy'],
     brief: 'Üç enerjiyle başlıyoruz. **Şarja varınca** olayının içine 3 enerji eklemeyi koy; uzun uçuş kesilmesin.',
-    waves: [route('FFFFFFFFFFFF', { energy: [3, 6, 9], crystals: [2, 5, 8, 11] })],
+    // Atlas'a giden dar koridor: üç şerit, on bir sıra; depodan (9) uzun olduğu için şarjsız geçilmez.
+    waves: [route('FFFFFFFFFFF', { start: 1, lanes: 3, energy: [3, 6, 9], crystals: [2, 5, 8, 10] })],
     initial: () => [on('energy'), setEnergy(3), cruise()],
     solution: () => [on('energy', addEnergy(3)), setEnergy(3), cruise()],
     hint: 'Olayın içindeki enerji komutu, istasyona vardığın anda çalışır.',
@@ -405,28 +417,28 @@ export const ADVANCED_LEVELS = [
   mission({
     kind: 'pekistir', title: 'Mantık ve Savunma', tools: ALL_TOOLS, events: ['pirate'], conds: ['atBeacon', 'aheadAndRightFree'],
     brief: 'Meteor **VE** sağ boşsa sağa kaç, yoksa düz uç. İşaretten sonra düz devam et. Korsanlara olayla karşılık ver.',
-    waves: ['FFRFFRFFFF', 'FRFFRFFFFF'].map((p) => route(p, { beacons: [7], pirates: [2, 5, 8], crystals: [3, 6] })),
+    waves: waves(['FFRFFRFFFF', 'FRFFRFFFFF'], { beacons: [7], pirates: [2, 5, 8], crystals: [3, 6], canyon: 84 }),
     solution: () => [on('pirate', shield()), until('atBeacon', steerAnd()), cruise()],
     hint: 'Kalkanı hareketlerin arasına elle dizme; korsan olayına yerleştir.',
   }),
   mission({
     kind: 'pekistir', title: 'Şarj Tarifin', tools: ALL_TOOLS, functions: ['refuel'], events: ['energy'], conds: SENSORS,
     brief: '**Enerji takviyesi** fonksiyonu 3 enerji eklesin. Şarj olayı fonksiyonu çağırsın. Uçuşu sensörlerle yönet.',
-    waves: energyWaves({ crystals: [2, 5, 8, 11] }),
+    waves: waves(['FLRFRLFLRFFF', 'RFLFLFRFRFFF', 'LLRFRRFLFLFF'], { energy: [3, 6, 9], crystals: [2, 5, 8, 11], canyon: 85 }),
     solution: () => [define('refuel', addEnergy(3)), on('energy', call('refuel')), setEnergy(3), forever(steer())],
     hint: 'Şarj fonksiyonunu yalnızca şarja varınca çağır: başka yerde enerji eklenmez.',
   }),
   mission({
     kind: 'pekistir', title: 'İki Fonksiyonlu Pilot', tools: ALL_TOOLS, functions: ['safe', 'protect'], events: ['pirate'], conds: SENSORS, rev: 2,
     brief: 'Güvenli uçuş yolu seçsin, korunma kalkanı açsın. Korsan olayı korunmayı, uçuş döngüsü güvenli uçuşu çağırsın.',
-    waves: longPaths.map((p) => route(p, { pirates: [2, 5, 8], crystals: [3, 6, 10] })),
+    waves: waves(['RFFLLFRRFLFF', 'LRLFRFFRLLFF', 'FRFRLFLLFRFF'], { pirates: [2, 5, 8], crystals: [3, 6, 10], canyon: 86 }),
     solution: () => [define('safe', steer()), define('protect', shield()), on('pirate', call('protect')), forever(call('safe'))],
     hint: 'İki tanımın adları farklı olmalı. Her çağrı kendi tanımıyla eşleşmeli.',
   }),
   mission({
     kind: 'hata', title: 'Kalkıştan Önce Son Kontrol', tools: ALL_TOOLS, functions: ['safe', 'protect'], events: ['pirate', 'energy'], conds: ['atBeacon', ...SENSORS],
     brief: 'Otopilotta tek bir yanlış değer var. Enerjiyi adım adım izle; ilk istasyona ulaşmaya yetecek şekilde düzelt.',
-    waves: finalWaves(), initial: () => finalSolution(2), solution: () => finalSolution(),
+    waves: waves(['FLRFRFLFRLFF', 'RLFLFRRFLFFF', 'LFRRFLFLRFFF'], { ...FINAL_ITEMS, canyon: 87 }), initial: () => finalSolution(2), solution: () => finalSolution(),
     hint: 'İlk istasyon üçüncü sırada. 2 enerji yetmez; başlangıç değerini 3 yap.',
   }),
   mission({
@@ -434,7 +446,7 @@ export const ADVANCED_LEVELS = [
     boss: true, dock: true,   // son korsan Kızıl Kanca'dır; çıkışın ötesinde Atlas'ın kapısı durur
     library: true,
     brief: 'Büyük final! Güvenli uçuş: meteor **VE** sağ boşsa sağa, başka meteor varsa sola, yoksa düz. Olaylarla şarj ol ve korun; halkadan sonra iki kez düz uç.',
-    waves: finalWaves(), solution: () => finalSolution(3, true),
+    waves: waves(['RFLFLRFRLFFF', 'FRRLFLLFRFFF', 'LRFRLFFLRFFF'], FINAL_ITEMS), solution: () => finalSolution(3, true),
     hint: 'Önce iki fonksiyon ve iki olay. 3 enerjiyle kalk. Halkaya kadar güvenli uçuşu çağır; sonunda 2 düz uçuş.',
   }),
 ];

@@ -76,7 +76,7 @@ export class MapScreen {
         <button class="btn" data-act="parent">${svg('i-lock')}Veli paneli<i>rapor ve kayıt</i></button>
         ${toggle('sound', 'i-sound', 'Ses efektleri', store.sound)}${toggle('music', 'i-music', 'Müzik', store.music)}${this.voice.supported ? toggle('voice', 'i-speak', 'Sesli okuma', store.voice) : ''}
       </div>
-      <div class="btns"><button class="btn primary" data-act="close">Tamam</button></div>`, (act) => {
+      <div class="btns"><button class="btn primary" data-act="close">Tamam</button></div>${SURUM ? `<p class="fine ver">sürüm ${SURUM}</p>` : ''}`, (act) => {
       if (act === 'pilots') { this.sfx.click(); this.showPilots(); return; }
       if (act === 'parent') { this.sfx.click(); this.parent.open(); return; }
       if (act === 'close') { this.sfx.click(); hideCard(); return; }
@@ -203,7 +203,9 @@ export class MapScreen {
     $('rank').textContent = rankOf(total);
 
     const W = Math.min(1040, $('map').clientWidth - 24), narrow = W < 660;
-    const side = narrow ? 58 : 150, R = narrow ? 34 : 48, band = narrow ? 420 : 330, soonBand = narrow ? 210 : 230;
+    const side = narrow ? 58 : 150, R = narrow ? 34 : 48, soonBand = narrow ? 210 : 230;
+    // Sektörün yüksekliği: yol, dokuz parçaya bölününce düğümler (yıldızlarıyla) birbirine değmeyecek kadar uzun olmalı.
+    const gap = narrow ? 76 : 86, span = W - 2 * side, band = Math.max(330, Math.round(Math.sqrt(Math.max(0, (9 * gap / 1.1) ** 2 - span ** 2))));
     const sectors = SECTORS.map((s) => ({ s, levels: levelsOf(s.id) }));
     const heights = sectors.map((x) => (x.levels.length ? band : soonBand));
     const H = heights.reduce((a, b) => a + b, 0) + 210 + (narrow ? 210 : 250);
@@ -236,6 +238,26 @@ export class MapScreen {
     // gezegenler, etiketler, görev düğümleri
     const html = [];
     const lenOf = new Map();
+    // Dolu yerler (yol koordinatında kutular): gezegenler, etiketler ve ana düğümler. Yan görevler
+    // bunlara ve birbirlerine değmeyen ilk boş yere konur.
+    const taken = [];
+    const hold = (l, t, r, b) => taken.push({ l, t, r, b });
+    const overlap = (a) => taken.reduce((sum, b) => sum + Math.max(0, Math.min(a.r, b.r) - Math.max(a.l, b.l)) * Math.max(0, Math.min(a.b, b.b) - Math.max(a.t, b.t)), 0);
+    sectors.forEach((x, i) => {
+      const cx = xs(i), cy = ys[i], lw = narrow ? 176 : 216;
+      hold(cx - R - 8, cy - R - 8, cx + R + 8, cy + R + 8);
+      const l = narrow ? (i % 2 === 0 ? 0 : W - lw) : cx - lw / 2;
+      hold(l, cy + R + 8, l + lw, cy + R + 124);
+    });
+    { const cx = xs(sectors.length), cy = ys[sectors.length]; hold(cx - 100, cy - 90, cx + 100, cy + 150); }
+    this.segs.forEach((g, i) => {
+      g.levels.forEach((l, k) => {
+        // İlk düğüm gezegenden biraz uzakta başlar (yıldızları gezegene değmesin); son sektörün yolu büyük
+        // hedef gezegende biter, son düğüm ona değmesin diye orada da pay bırakılır.
+        const at = g.start + g.len * ((k + 1.3) / (g.levels.length + (i === sectors.length - 1 ? 2.1 : 1.3))), p = this.pointAt(at);
+        lenOf.set(l.id, at); hold(p.x - 26, p.y - 26, p.x + 26, p.y + 44);
+      });
+    });
     this.segs.forEach((g, i) => {
       const { s, levels } = g, x = xs(i), y = ys[i], left = i % 2 === 0;
       const open = levels.length > 0 && store.isUnlocked(levels[0], LEVELS);
@@ -247,9 +269,7 @@ export class MapScreen {
       const pos = narrow ? (left ? 'left:4px' : 'right:4px') : `left:${x}px`;
       html.push(`<div class="slabel ${narrow ? (left ? 'l' : 'r') : ''} ${open ? '' : 'dim'}" style="${pos};top:${y + R + 14}px"><small>SEKTÖR ${s.id}</small><b>${s.name}</b><span class="chip">${s.concept}</span>${info}</div>`);
       levels.forEach((l, k) => {
-        // Son sektörün yolu büyük hedef gezegende biter; son düğüm ona değmesin diye pay bırakılır.
-        const at = g.start + g.len * ((k + 1) / (levels.length + (i === sectors.length - 1 ? 1.8 : 1)));
-        lenOf.set(l.id, at);
+        const at = lenOf.get(l.id);
         const p = this.pointAt(at), st = store.stars(l.id), locked = !store.isUnlocked(l, LEVELS), isCur = cur && l.id === cur.id;
         // Öteki yolundan geçilen görev de tamamlanmış görünür (kesik çerçeveyle: kendi yıldızları duruyor).
         const via = !st && wonEither(store, l);
@@ -259,32 +279,40 @@ export class MapScreen {
         html.push(`<div class="mn" style="left:${p.x}px;top:${p.y}px"><button class="${cls}" data-level="${l.id}" title="${l.title}" aria-label="Görev ${l.id}: ${l.title}">${inner}</button><div class="mstars">${stars}</div></div>`);
       });
       // Yan görevler: bağlı oldukları ana görevin yanında, yoldan dışarıda durur.
-      const taken = new Set();
       for (const x of extrasOf(s.id)) {
         const at = lenOf.get(x.after), unlocked = store.isUnlocked(x, LEVELS);
         // Gizli görev sektör açılınca kilitli görünür (hedef olsun); acil durum açılmadan görünmez.
         if (at === undefined || !open || (x.extra !== 'gizli' && !unlocked)) continue;
         const p = this.pointAt(at), q = this.pointAt(at + 3), len = Math.hypot(q.x - p.x, q.y - p.y) || 1;
         const tx = (q.x - p.x) / len, ty = (q.y - p.y) / len, toCentre = Math.sign(W / 2 - p.x) || 1;
-        // Yola dik iki yönden yukarı ve haritanın ortasına bakanı seçilir: gezegen etiketlerine değmesin.
-        const score = (nx, ny) => ny - toCentre * nx * 0.6;
-        const first = !taken.has(x.after); taken.add(x.after);
-        const [nx, ny] = (score(-ty, tx) < score(ty, -tx)) === first ? [-ty, tx] : [ty, -tx], D = narrow ? 54 : 66;
-        const sx = p.x + nx * D, sy = p.y + ny * D, st = store.stars(x.id);
+        // Yola dik iki yönden önce yukarı ve haritanın ortasına bakan denenir, sonra öteki; yakın yer
+        // doluysa biraz ileri, geri ya da dışarı kaydırılır. Hiçbiri boş değilse en az çakışan yer seçilir.
+        const score = (nx, ny) => ny - toCentre * nx * 0.6, st = store.stars(x.id);
+        const sides = score(-ty, tx) < score(ty, -tx) ? [[-ty, tx], [ty, -tx]] : [[ty, -tx], [-ty, tx]], D = narrow ? 58 : 68;
+        const tall = !unlocked || st ? 58 : 40;   // düğmenin altı: etiket, varsa yıldızlar
+        let best = null;
+        for (const out of [0, 44, 88]) for (const along of [0, 30, -30]) for (const [nx, ny] of sides) {
+          const cx = p.x + nx * (D + out) + tx * along, cy = p.y + ny * (D + out) + ty * along;
+          const box = { l: cx - 28, t: cy - 22, r: cx + 28, b: cy + tall };
+          const cost = box.l < 2 || box.r > W - 2 ? Infinity : overlap(box) + out * 0.5 + Math.abs(along) * 0.2;
+          if (!best || cost < best.cost) best = { cost, cx, cy, box };
+        }
+        const sx = best.cx, sy = best.cy;
+        taken.push(best.box);
         const line = document.createElementNS(NS, 'line');
         line.setAttribute('class', 'rside'); line.setAttribute('x1', p.x); line.setAttribute('y1', p.y); line.setAttribute('x2', sx); line.setAttribute('y2', sy);
         root.append(line);
         const cls = ['node', st ? 'done' : '', unlocked ? '' : 'locked'].join(' ');
         const inner = !unlocked ? svg('i-lock') : x.extra === 'gizli' ? '?' : x.extra === 'catal' ? svg('i-fork') : x.extra === 'tahmin' ? (x.python ? 'Py' : svg('i-eye')) : x.extra === 'silah' ? svg(x.tools.includes('beam') ? 'i-beam' : 'i-laser') : '!';
         const tag = `<em class="sidetag">${SIDE_TAG[x.python ? 'python' : x.extra] || ''}</em>`;
-        const under = tag + (unlocked ? `<div class="mstars">${[1, 2, 3].map((n) => svg('i-star', n <= st ? 'lit' : '')).join('')}</div>` : `<small>${SECRET_STARS}${svg('i-star')}</small>`);
+        // Yıldızlar kazanılınca görünür: oynanmamış yan görevin altında üç boş yıldız kalabalık eder.
+        const under = tag + (!unlocked ? `<small>${SECRET_STARS}${svg('i-star')}</small>` : st ? `<div class="mstars">${[1, 2, 3].map((n) => svg('i-star', n <= st ? 'lit' : '')).join('')}</div>` : '');
         html.push(`<div class="mn side ${x.extra}" style="left:${sx}px;top:${sy}px"><button class="${cls}" data-level="${x.id}" title="${x.title}" aria-label="${EXTRA_LABEL[x.extra]}: ${x.title}">${inner}</button>${under}</div>`);
       }
     });
     const last = sectors.length;
     html.push(`<div class="nova" style="left:${xs(last)}px;top:${ys[last]}px"><i></i><div><small>HEDEF GEZEGEN</small><b>NOVA</b></div></div>`);
     html.push(`<div class="shipmark" id="shipmark">${shipSvg(hangarLook)}${cur ? `<span>Sıradaki: <b>${cur.title}</b></span>` : ''}</div>`);
-    html.push(`<p class="mapfoot" style="top:${H - 46}px">Her sektör yeni bir kodlama kavramı öğretir. Bir görevi geçince sıradaki açılır.${SURUM ? ` · sürüm ${SURUM}` : ''}</p>`);
     route.insertAdjacentHTML('beforeend', html.join(''));
 
     // gemi: sıradaki görevin hemen önünde; hepsi bittiyse son görevin üstünde
@@ -307,7 +335,7 @@ export class MapScreen {
     const w = label.offsetWidth, h = label.offsetHeight;
     if (!w) return;                                   // harita kapalı ya da dar ekranda etiket gizli
     const o = mark.getBoundingClientRect(), route = $('route').getBoundingClientRect(), r = 30, d = 22;
-    const blocks = [...$('route').querySelectorAll('.mn .node, .mn .mstars, .mn small, .planet i, .slabel, .nova, .mapfoot')]
+    const blocks = [...$('route').querySelectorAll('.mn .node, .mn .mstars, .mn small, .mn .sidetag, .planet i, .slabel, .nova')]
       .map((e) => e.getBoundingClientRect()).filter((b) => b.width && b.height);
     const spots = [[-w / 2, -r - h], [r, -h / 2], [-r - w, -h / 2], [-w / 2, r], [d, -d - h], [-d - w, -d - h], [d, d], [-d - w, d]];
     const cost = ([x, y]) => {

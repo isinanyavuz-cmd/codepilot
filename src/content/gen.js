@@ -22,10 +22,11 @@ function randomLines({ lanes, rows, start, density }, next) {
  * @param spec.needBoth   her dalgada hem sola hem sağa kaçış gereksin
  * @param spec.decoys     "kolay yol" programları; her biri en az bir dalgada başarısız olmalı
  * @param spec.alts       örnek çözümle aynı değerde sayılan programlar; onlar da her dalgayı geçmeli
+ * @param spec.accept     dalgaya özel ek koşul: (satırlar) => boolean
  * Ayrıca bir dalganın ezber çözümü en az bir başka dalgada başarısız olur.
  */
 export function genWaves(spec) {
-  const { count = 3, seed, solution, minDodges = 2, needBoth = false, decoys = [], alts = [] } = spec;
+  const { count = 3, seed, solution, minDodges = 2, needBoth = false, decoys = [], alts = [], accept = null } = spec;
   for (let attempt = 0; attempt < 400; attempt++) {
     const waves = [];
     for (let i = 0; i < 300 && waves.length < count; i++) {
@@ -37,6 +38,7 @@ export function genWaves(spec) {
       if (lefts + rights < minDodges) continue;
       if (needBoth && (!lefts || !rights)) continue;
       if (alts.some((a) => simulate(parseField(lines), a).outcome !== 'win')) continue;
+      if (accept && !accept(lines)) continue;
       if (waves.some((w) => w.join() === lines.join())) continue;
       waves.push(lines);
     }
@@ -51,4 +53,32 @@ export function genWaves(spec) {
     if (memoFails && decoys.every((d) => failsSomewhere(d))) return waves;
   }
   throw new Error(`Dalga üretilemedi (tohum ${seed})`);
+}
+
+/** Programın bir dalgada geçtiği kareler ("şerit,sıra"), uçuş sırasıyla. */
+export function visited(lines, program) {
+  return simulate(parseField(lines), program).events.filter((e) => e.t === 'move' && !e.exit).map((e) => `${e.to.lane},${e.to.y}`);
+}
+
+/** `on` programlarının hepsinin geçtiği, `off` programlarının hiçbirinin geçmediği kareler (uçuş sırasıyla). */
+export function common(lines, on, off = []) {
+  const others = on.slice(1).map((p) => new Set(visited(lines, p))), skip = new Set(off.flatMap((p) => visited(lines, p)));
+  return visited(lines, on[0]).filter((k) => others.every((s) => s.has(k)) && !skip.has(k));
+}
+
+/**
+ * Dalgalara kristal koyar. Kristaller `on` programlarının hepsinin geçtiği karelere gelir: doğru
+ * sayılan hangi çözümle uçulursa uçulsun toplanırlar. `off` programlarının geçtiği kareler atlanır;
+ * o programlar dalgayı geçse bile kristalleri kaçırır. Her dalgada en çok `n` kristal, yola yayılarak.
+ */
+export function withCrystals(waves, { on, off = [], n = 2 }) {
+  return waves.map((lines) => {
+    const shared = common(lines, on, off);
+    const out = lines.map((row) => [...row]), take = Math.min(n, shared.length);
+    for (let j = 0; j < take; j++) {
+      const [lane, y] = shared[Math.floor(((j + 0.5) * shared.length) / take)].split(',').map(Number);
+      out[lines.length - 1 - y][lane] = 'K';
+    }
+    return out.map((row) => row.join(''));
+  });
 }

@@ -9,7 +9,7 @@
 // durduğu ana görev) ve `open(store, levels)` (açık mı) taşırlar. Ana yolu kilitlemezler.
 import { F, L, R, fire, beam, rep, forever, ifelse, until, on, shield, setEnergy, addEnergy, setCounter, addCounter, define, call, defineN, callN } from '../engine/blocks.js';
 import { pilli } from '../engine/world.js';
-import { genWaves } from './gen.js';
+import { genWaves, withCrystals, common } from './gen.js';
 import { route, mission, wallWaves, steer, cruise, MOVES, LOOPS, EVENT_TOOLS, ENERGY_TOOLS, ALL_TOOLS, SENSORS } from './advanced.js';
 import { LEVELS, SECTORS, levelById, levelsOf } from './levels.js';
 import { ROUNDS, PY_ROUNDS } from './predict.js';
@@ -95,7 +95,7 @@ export const EXTRAS = [
   secret(3, {
     title: 'Fırtınanın Gözü',
     brief: 'Dört uzun ve yoğun dalga! Önünde meteor varsa boş yana kaçan tek bir program hepsini geçmeli.',
-    waves: genWaves({ lanes: 5, rows: 12, start: 2, density: 0.34, seed: 3131, count: 4, solution: twoSensor(), minDodges: 5, needBoth: true, decoys: [oneSide(R), oneSide(L)], alts: [twoSensorLeft()] }),
+    waves: withCrystals(genWaves({ lanes: 5, rows: 12, start: 2, density: 0.34, seed: 3131, count: 4, solution: twoSensor(), minDodges: 5, needBoth: true, decoys: [oneSide(R), oneSide(L)], alts: [twoSensorLeft()], accept: (lines) => common(lines, [twoSensor(), twoSensorLeft()]).length >= 3 }), { on: [twoSensor(), twoSensorLeft()], n: 3 }),
     tools: [...MOVES, 'forever', 'ifelse'], conds: SENSORS, maxBlocks: 8, par: 6,
     solution: twoSensor,
     hint: 'Önünde meteor varsa: sağın boşsa sağa, değilse sola. Yoksa düz uç.',
@@ -162,7 +162,7 @@ export const EXTRAS = [
   fork(3, 5, {
     title: 'Önce Sola Bak',
     brief: 'İki Sensör\'ün öteki yolu: önünde meteor varsa bu kez **solum boş mu?** diye sor. Karar ağacının aynası da iş görür.',
-    waves: genWaves({ lanes: 5, rows: 8, start: 2, density: 0.3, seed: 3535, solution: twoSensorLeft(), minDodges: 3, needBoth: true, decoys: [oneSide(R), oneSide(L)], alts: [twoSensor()] }),
+    waves: withCrystals(genWaves({ lanes: 5, rows: 8, start: 2, density: 0.3, seed: 3535, solution: twoSensorLeft(), minDodges: 3, needBoth: true, decoys: [oneSide(R), oneSide(L)], alts: [twoSensor()], accept: (lines) => common(lines, [twoSensorLeft(), twoSensor()]).length >= 2 }), { on: [twoSensorLeft(), twoSensor()] }),
     tools: [...MOVES, 'forever', 'ifelse'], conds: ['ahead', 'leftFree', 'rightFree'], maxBlocks: 8, par: 6,
     solution: twoSensorLeft,
     hint: 'Önünde meteor varsa: solun boşsa sola, değilse sağa. Yoksa düz uç.',
