@@ -328,6 +328,27 @@ test('Sektör 5: kalkanı olaya bağlamayan program geçemez', () => {
   }
 });
 
+test('Sektör 5: korsanlar geçit tutar; hiçbir dalgada korsana uğramadan çıkışa varan yol yoktur', () => {
+  // Kayalara ve korsanlara girmeden başlangıçtan çıkışa varılabiliyor mu? (her adım bir sıra ilerler)
+  const bypass = (lines) => {
+    const f = parseField(lines);
+    let lanes = new Set([f.start]);
+    for (let y = 1; y < f.rows && lanes.size; y++) {
+      const next = new Set();
+      for (const lane of lanes) for (const d of [-1, 0, 1]) {
+        const l = lane + d, k = `${l},${y}`;
+        if (l >= 0 && l < f.lanes && !f.meteors.has(k) && !f.pirates.has(k)) next.add(l);
+      }
+      lanes = next;
+    }
+    return lanes.size > 0;
+  };
+  for (const level of levelsOf(5)) for (const [i, w] of level.waves.entries()) assert.ok(!bypass(w), `${level.id} dalga ${i + 1}: korsanların yanından dolaşılıyor`);
+  // Kalkansız hiçbir düz ya da yana kayan uçuş geçemez.
+  const first = levelById('5-1');
+  for (const p of [[forever(F())], [L(), forever(F())], [R(), forever(F())], [L(), L(), forever(F())], [R(), R(), forever(F())]]) assert.ok(!wins(first, p));
+});
+
 test('VEYA görevinde her koşul tek başına da tetikler; hata avında yalnızca koşulu değiştirmek yeter', () => {
   const or = levelById('4-4'), field = parseField(or.waves[0]);
   const senses = simulate(field, or.solution()).events.filter((e) => e.t === 'sense' && e.result);
