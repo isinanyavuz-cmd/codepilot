@@ -147,7 +147,11 @@ export class View {
       if (this.composer) this.composer.dispose();
       this.composer = null;
       if (this.quality === 0) throw new Error('sade');
-      const rt = new THREE.WebGLRenderTarget(W * dpr, H * dpr, { type: THREE.HalfFloatType, samples: this.quality === 2 ? 4 : 0 });
+      // Kenar yumuşatma (MSAA) her parlama kipinde açık. Orta kipte (telefon yavaşlayınca düşülen kip)
+      // kapalıyken gemi kanatları ve meteor kenarları merdiven gibi tırtıklanıyordu. 1x piksel oranında
+      // 4 örnek, yüksek kipin 2x piksel oranından çok daha ucuzdur: telefon GPU'ları örnekleri çip
+      // üstünde çözer, ek iş tek bir çözme kopyasıdır.
+      const rt = new THREE.WebGLRenderTarget(W * dpr, H * dpr, { type: THREE.HalfFloatType, samples: 4 });
       this.composer = new THREE.EffectComposer(this.renderer, rt);
       this.composer.setPixelRatio(dpr); this.composer.setSize(W, H);
       this.composer.addPass(new THREE.RenderPass(this.scene, this.cam));
