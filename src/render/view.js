@@ -18,7 +18,31 @@ const turn = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 const bright = (hex, k) => new THREE.Color(hex).multiplyScalar(k);
 const glow = (color, opacity) => new THREE.MeshBasicMaterial({ color, transparent: true, opacity, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
 
+// Yumuşak kenarlı çizgi dokusu. Izgara çizgileri ekranda 1–2 piksel kalınlığında; düz kenarlı
+// ince bir şerit olarak çizilince kenarları merdiven gibi tırtıklanır, pikselden ince olanlar
+// yer yer kopar. Bu dokuyla şerit LINE_PAD kat geniş çizilir, parlak çekirdek ortada eski
+// kalınlıkta kalır ve kenara doğru yumuşakça söner: kenar yumuşatması MSAA'ya gerek kalmadan
+// her kalite kipinde (telefonda kalite düştüğünde de) olur. Mipmap ve eğik doku süzmesi uzaktaki
+// ve yatık çizgileri koparmadan inceltir.
+const LINE_PAD = 3;
+const LINE_TEX = (() => {
+  const N = 64, data = new Uint8Array(4 * N * 4);
+  for (let j = 0; j < N; j++) {
+    const d = Math.abs((j + 0.5) / N - 0.5) * 2 * LINE_PAD;     // çizgi ekseninden uzaklık (çekirdek yarı kalınlığı = 1)
+    const s = Math.min(1, Math.max(0, (d - 0.55) / 0.9)), core = 1 - s * s * (3 - 2 * s);
+    const a = Math.round(255 * Math.min(1, core + 0.22 * Math.max(0, 1 - d / LINE_PAD) ** 2));
+    for (let i = 0; i < 4; i++) data.set([255, 255, 255, a], (j * 4 + i) * 4);
+  }
+  const t = new THREE.DataTexture(data, 4, N);
+  t.magFilter = THREE.LinearFilter; t.minFilter = THREE.LinearMipmapLinearFilter; t.generateMipmaps = true;
+  t.needsUpdate = true;
+  return t;
+})();
+/** Izgara ve işaret çizgileri için yumuşak kenarlı parlayan malzeme (bkz. LINE_TEX). */
+const lineGlow = (color, opacity) => Object.assign(glow(color, opacity), { map: LINE_TEX });
+
 function strip(group, x1, z1, x2, z2, w, mat, y = 0) {
+  if (mat.map === LINE_TEX) w *= LINE_PAD;
   const m = new THREE.Mesh(new THREE.PlaneGeometry(Math.hypot(x2 - x1, z2 - z1), w), mat);
   m.rotation.x = -Math.PI / 2; m.rotation.z = -Math.atan2(z2 - z1, x2 - x1);
   m.position.set((x1 + x2) / 2, y, (z1 + z2) / 2);
@@ -29,7 +53,7 @@ function strip(group, x1, z1, x2, z2, w, mat, y = 0) {
 /** Köşeleri işaretli kare çerçevesi (sensörün baktığı ve geminin gideceği kare için). */
 function makeMark(color, fill) {
   const g = new THREE.Group();
-  const line = glow(bright(color, 1.6), 1), plane = glow(color, fill);
+  const line = lineGlow(bright(color, 1.6), 1), plane = glow(color, fill);
   const h = C / 2 - 0.07, L = 0.34, w = 0.07;
   for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
     strip(g, sx * h, sz * h, sx * (h - L), sz * h, w, line, 0.02);
@@ -47,6 +71,7 @@ export class View {
     this.container = container;
     this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
     this.renderer.toneMapping = THREE.NeutralToneMapping;
+    LINE_TEX.anisotropy = Math.min(8, this.renderer.capabilities.getMaxAnisotropy());
     container.appendChild(this.renderer.domElement);
 
     this.scene = new THREE.Scene();
@@ -94,7 +119,7 @@ export class View {
       this.dust = new THREE.Points(geo, new THREE.PointsMaterial({ map: this.glowTex, color: 0xcfe6ff, size: 0.2, transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending, depthWrite: false }));
       this.dust.frustumCulled = false; this.scene.add(this.dust); this.flow = 0.12;
     }
-    this.mats = { line: glow(0x4fd2ff, 0.34), edge: glow(0x7fe2ff, 0.7), floor: glow(0x2a6bff, 0.07), exit: glow(bright(GREEN, 2.2), 1) };
+    this.mats = { line: lineGlow(0x4fd2ff, 0.34), edge: lineGlow(0x7fe2ff, 0.7), floor: glow(0x2a6bff, 0.07), exit: lineGlow(bright(GREEN, 2.2), 1) };
     this.tweens = new Set(); this.bursts = []; this.meteors = new Map(); this.crystals = new Map();
     this.pirates = new Map(); this.landmarks = new Map(); this.gate = null; this.progress = 0;
     // Kamera: 'ust' bütün alanı gösterir, 'pilot' geminin arkasından bakar ve onu izler.
@@ -286,7 +311,7 @@ export class View {
     // çıkış çizgisi
     strip(g, X0, Z1, X1, Z1, 0.09, m.exit, 0.01);
     for (let l = 0; l < lanes; l++) for (const k of [0, 1]) {
-      const a = glow(GREEN, 0.75 - k * 0.35), z = Z1 - 0.35 - k * 0.3; a.userData = {};
+      const a = lineGlow(GREEN, 0.75 - k * 0.35), z = Z1 - 0.35 - k * 0.3; a.userData = {};
       strip(g, this.gx(l) - 0.22, z + 0.16, this.gx(l), z, 0.05, a).userData.own = true;
       strip(g, this.gx(l), z, this.gx(l) + 0.22, z + 0.16, 0.05, a);
     }
@@ -362,7 +387,7 @@ export class View {
       this.trail = null;
     }
     if (!lanes || !this.field) return;
-    const g = new THREE.Group(), dot = glow(bright(0xffd84a, 1.3), 0.55), line = glow(0xffd84a, 0.16), rows = this.field.rows;
+    const g = new THREE.Group(), dot = glow(bright(0xffd84a, 1.3), 0.55), line = lineGlow(0xffd84a, 0.16), rows = this.field.rows;
     lanes.slice(0, rows).forEach((lane, y) => {
       if (y > 0) {
         const m = new THREE.Mesh(new THREE.CircleGeometry(0.08, 12), dot);
