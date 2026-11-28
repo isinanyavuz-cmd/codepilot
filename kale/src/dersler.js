@@ -1,4 +1,4 @@
-// Robot Okulu: on bir kısa ders. Her ders tek bir fikir öğretir ve atölyeye bir şey açar.
+// Şövalye Okulu: on bir kısa ders. Her ders tek bir fikir öğretir ve atölyeye bir şey açar.
 //
 // Bir dersin alanları: waves (denemeler; aynı program hepsinde tutmalı), parts (programlanan parçalar),
 // goal (motor.js → judge), solution (testler için örnek çözüm), hints.
@@ -13,11 +13,11 @@ const guard = (x, y, dir) => ({ kind: 'guard', x, y, dir });
 export const LESSONS = [
   {
     id: 1, title: 'İlk Adım', type: 'yaz', coach: true,
-    text: 'Robotu bayrağa götür.',
+    text: 'Şövalyeyi bayrağa götür.',
     waves: [{ rows: ['#####', '...F#', '#####'], ents: [guard(0, 1, 1)] }],
     parts: [{ start: 'f', tools: { blocks: ['fwd'] } }],
     goal: { type: 'flags' }, solution: ['fff'],
-    hints: ['Her «ileri git» robotu bir kare yürütür.', 'Bayrak üç kare ötede: üç «ileri git» gerek.'],
+    hints: ['Her «ileri git» şövalyeyi bir kare yürütür.', 'Bayrak üç kare ötede: üç «ileri git» gerek.'],
   },
   {
     id: 2, title: 'Köşe', type: 'yaz',
@@ -25,7 +25,7 @@ export const LESSONS = [
     waves: [{ rows: ['#####', '#..F#', '#.###', '#.###'], ents: [guard(1, 3, 0)] }],
     parts: [{ start: '', tools: { blocks: ['fwd', 'left', 'right'] } }],
     goal: { type: 'flags' }, solution: ['ffrff'],
-    hints: ['«sağa dön» robotu yürütmez; yalnızca baktığı yönü çevirir.', 'İki ileri, sağa dön, iki ileri.'],
+    hints: ['«sağa dön» şövalyeyi yürütmez; yalnızca baktığı yönü çevirir.', 'İki ileri, sağa dön, iki ileri.'],
   },
   {
     id: 3, title: 'Yanlış Dönüş', type: 'duzelt',
@@ -33,7 +33,7 @@ export const LESSONS = [
     waves: [{ rows: ['F..##', '##.##', '##..#'], ents: [guard(3, 2, 3)] }],
     parts: [{ start: 'frffrff', tools: { blocks: ['fwd', 'left', 'right'] } }],
     goal: { type: 'flags' }, solution: ['frfflff'],
-    hints: ['Önce çalıştır ve robotun nerede tosladığına bak.', 'Yanlış bloğa dokun: üstünde çıkan ✕ onu siler. Yerine doğrusunu sürükle.'],
+    hints: ['Önce çalıştır ve şövalyenin nerede tosladığına bak.', 'Yanlış bloğa dokun: üstünde çıkan ✕ onu siler. Yerine doğrusunu sürükle.'],
   },
   {
     id: 4, title: 'Uzun Koridor', type: 'yaz',
@@ -61,15 +61,15 @@ export const LESSONS = [
   },
   {
     id: 7, title: 'Tahmin Et', type: 'tahmin',
-    text: 'Programı oku: robot hangi karede duracak? O kareye dokun.',
-    // İki başlangıç: tahmin tutmazsa robot ötekinden başlar, böylece görülen cevap ezberlenmez.
+    text: 'Programı oku: şövalye hangi karede duracak? O kareye dokun.',
+    // İki başlangıç: tahmin tutmazsa şövalye ötekinden başlar, böylece görülen cevap ezberlenmez.
     waves: [
       { rows: ['.....', '.....', '.....'], ents: [guard(0, 2, 1)] },
       { rows: ['.....', '.....', '.....'], ents: [guard(4, 0, 3)] },
     ],
     parts: [{ start: 'R2(flfr)f', lock: true, tools: { blocks: [] } }],
     goal: { type: 'predict' }, solution: ['R2(flfr)f'],
-    hints: ['Parmağınla robotu adım adım yürüt; dönüşlerde yalnız yönü değişir.', 'Döngü iki kez dönüyor; ondan sonra bir «ileri git» daha var.'],
+    hints: ['Parmağınla şövalyeyi adım adım yürüt; dönüşlerde yalnız yönü değişir.', 'Döngü iki kez dönüyor; ondan sonra bir «ileri git» daha var.'],
   },
   {
     id: 8, title: 'Duvara Kadar', type: 'yaz',
@@ -84,7 +84,7 @@ export const LESSONS = [
   },
   {
     id: 9, title: 'Gözcü', type: 'yaz',
-    text: 'Hırsız şövalye her denemede başka koridordan geliyor. Gözcün dönerek baksın, görünce koşsun.',
+    text: 'Hırsız her denemede başka koridordan geliyor. Gözcün dönerek baksın, görünce koşsun.',
     waves: [
       { rows: ['###.###', '###.###', '.....aS', '###.###', '###.###'], ents: [guard(3, 2, 0)], path: 'L....R' },
       { rows: ['###.###', '###.###', 'Sa.....', '###.###', '###.###'], ents: [guard(3, 2, 0)], path: 'R....L' },
@@ -92,18 +92,18 @@ export const LESSONS = [
     ],
     parts: [{ start: '', tools: { blocks: ['fwd', 'dash', 'left', 'right', 'forever', 'if'], conds: ['see', 'wall'] } }],
     goal: { type: 'catch' }, solution: ['F(Ie(d)(r))'],
-    hints: ['Geçen dersteki kalıbı kur: «sürekli tekrarla», içine «eğer / değilse».', 'Şövalyeyi görüyorsa koşsun; görmüyorsa bir yana dönüp oraya baksın.'],
+    hints: ['Geçen dersteki kalıbı kur: «sürekli tekrarla», içine «eğer / değilse».', 'Hırsızı görüyorsa koşsun; görmüyorsa bir yana dönüp oraya baksın.'],
   },
   {
     id: 10, title: 'Tuzak Kapı', type: 'yaz',
-    text: 'Bu kez kapıyı programla: şövalye altını alınca kapansın, içeride kalsın.',
+    text: 'Bu kez kapıyı programla: hırsız altını alınca kapansın, içeride kalsın.',
     waves: [
       { rows: ['#######', 'S....a#', '#######'], ents: [{ kind: 'door', x: 3, y: 1, on: true }], path: 'RRRRRLLLLL' },
       { rows: ['#######', 'S....a#', '#######'], ents: [{ kind: 'door', x: 3, y: 1, on: true }], path: 'RR....RRRLLLLL' },
     ],
     parts: [{ start: '', tools: { blocks: ['open', 'close', 'wait', 'on'], events: ['start', 'coin'] } }],
     goal: { type: 'trap', zone: { x0: 4, y0: 1, x1: 5, y1: 1 } }, solution: ['@s()@c(c)'],
-    hints: ['Şövalye her denemede başka zamanda geliyor: saymak işe yaramaz.', '«olunca» bloğu ekle, olayını «altın alınınca» yap, içine «kapan» koy.'],
+    hints: ['Hırsız her denemede başka zamanda geliyor: saymak işe yaramaz.', '«olunca» bloğu ekle, olayını «altın alınınca» yap, içine «kapan» koy.'],
   },
   {
     id: 11, title: 'Alarm', type: 'yaz',
@@ -113,11 +113,11 @@ export const LESSONS = [
       { rows: ['#######', 'S.....#', '####.##', '####.##'], ents: [{ kind: 'guard', x: 4, y: 3, dir: 0 }, { kind: 'door', x: 3, y: 1, on: true }], path: 'R.R.R.RRR.LLLLL' },
     ],
     parts: [
-      { name: 'Gözcü', start: '', tools: { blocks: ['alarm', 'honk', 'on'], events: ['start', 'see'] } },
+      { name: 'Gözcü', start: '', tools: { blocks: ['alarm', 'call', 'on'], events: ['start', 'see'] } },
       { name: 'Kapı', start: '', tools: { blocks: ['open', 'close', 'on'], events: ['start', 'alarm'] } },
     ],
     goal: { type: 'trap', zone: { x0: 4, y0: 1, x1: 5, y1: 1 } }, solution: ['@s()@e(a)', '@s()@a(c)'],
-    hints: ['İki ayrı program yazacaksın: üstteki düğmelerle gözcü ile kapı arasında geç.', 'Gözcü: «şövalyeyi görünce» → «alarm çal». Kapı: «alarm çalınca» → «kapan».'],
+    hints: ['İki ayrı program yazacaksın: üstteki düğmelerle gözcü ile kapı arasında geç.', 'Gözcü: «hırsızı görünce» → «alarm çal». Kapı: «alarm çalınca» → «kapan».'],
   },
 ];
 
@@ -149,12 +149,12 @@ export function failText(lesson, res) {
   const say = (subject, rest) => `${nth ? nth + subject : subject[0].toLocaleUpperCase('tr') + subject.slice(1)} ${rest}`;
   switch (res.why) {
     case 'empty': return 'Program boş: önce birkaç blok ekle.';
-    case 'bump': return `Güm! ${say('robot', 'tosladı ve bayrağa varamadı.')}`;
-    case 'short': return say('robot', res.left > 1 ? `durdu ama ${res.left} bayrak kaldı.` : 'bayrağa varmadan durdu.');
-    case 'time': return say('süre', 'doldu: robot bayraklara yetişemedi.');
-    case 'escaped': return say('şövalye', 'kaçtı!');
-    case 'early': return say('kapı', 'erken kapandı: şövalye içeri giremedi.');
-    case 'open': return say('kapı', 'açık kaldı: şövalye kaçtı.');
+    case 'bump': return `Güm! ${say('şövalye', 'tosladı ve bayrağa varamadı.')}`;
+    case 'short': return say('şövalye', res.left > 1 ? `durdu ama ${res.left} bayrak kaldı.` : 'bayrağa varmadan durdu.');
+    case 'time': return say('süre', 'doldu: şövalye bayraklara yetişemedi.');
+    case 'escaped': return say('hırsız', 'kaçtı!');
+    case 'early': return say('kapı', 'erken kapandı: hırsız içeri giremedi.');
+    case 'open': return say('kapı', 'açık kaldı: hırsız kaçtı.');
     default: return 'Olmadı. Bir daha dene.';
   }
 }

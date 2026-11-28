@@ -1,5 +1,5 @@
-// Oynama ekranı: şövalyeyi oyuncu yürütür. Her hamleden sonra kaledeki her şey programından bir
-// hareket yapar. Bir robota, kapıya ya da dikene dokununca programı okunur: kaleyi yenmenin
+// Oynama ekranı: hırsızı oyuncu yürütür. Her hamleden sonra kaledeki her şey programından bir
+// hareket yapar. Bir şövalyeye, kapıya ya da dikene dokununca programı okunur: kaleyi yenmenin
 // yolu, onu kuranın yazdığı kodu okumaktır.
 import { buildLevel, initState, step } from './motor.js';
 import { KIND_NAMES } from './bloklar.js';
@@ -31,13 +31,13 @@ export function playScreen(ctx, { castle, source, back, sampleIndex }) {
 
   function draw(fx = [], snap = false) {
     board.render(state, fx, snap);
-    stats.textContent = `Hamle ${state.t}${coins ? ` · Altın ${state.knight.coins}/${coins}` : ''}`;
+    stats.textContent = `Hamle ${state.t}${coins ? ` · Altın ${state.intruder.coins}/${coins}` : ''}`;
   }
 
   function restart() {
     clearTimeout(resultTimer);
     state = initState(level); busy = false; queued = null;
-    msg.className = 'msg'; msg.textContent = 'Hazineye ulaş! Bir robota dokunursan programını okursun.';
+    msg.className = 'msg'; msg.textContent = 'Hazineye ulaş! Bir şövalyeye dokunursan programını okursun.';
     board.setLevel(level);
     draw([], true);
     fit();
@@ -64,7 +64,7 @@ export function playScreen(ctx, { castle, source, back, sampleIndex }) {
     if (!won) {
       const s = sheet([
         h('div', { class: 'sheet-title big', text: 'Yakalandın!' }),
-        h('p', { class: 'sheet-text', text: 'Robotların programını oku, zamanını kolla.' }),
+        h('p', { class: 'sheet-text', text: 'Şövalyelerin programını oku, zamanını kolla.' }),
         h('div', { class: 'row' }, h('button', { class: 'btn go', text: 'Tekrar dene', onclick: () => { s.close(); restart(); } })),
       ], { cls: 'result' });
       return;

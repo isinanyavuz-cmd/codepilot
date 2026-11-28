@@ -3,14 +3,14 @@
 // Program bir "şapka" listesidir. Her şapka bir olayı ve o olay olunca çalışacak blokları tutar:
 //   [{ t: 'on', e: 'start', b: [{ t: 'forever', b: [{ t: 'fwd' }, …] }] }, { t: 'on', e: 'coin', b: […] }]
 // Kısa yazım aynı şeyi tek satırda söyler; kayıtta, paylaşım bağlantısında ve derslerde bu kullanılır:
-//   '@s(F(ffrr))@c(b)'  →  başlayınca: sürekli { ileri, ileri, sağ, sağ } · altın alınınca: korna çal
+//   '@s(F(ffrr))@c(b)'  →  başlayınca: sürekli { ileri, ileri, sağ, sağ } · altın alınınca: bağır
 //   'R4(ffr)'           →  yalnız "başlayınca" şapkası varsa şapka yazılmaz
 
 let counter = 0;
 /** Blok kimliği: editörde seçim ve çalışırken vurgulama için. Kayda yazılmaz. */
 export const uid = () => `b${(++counter).toString(36)}`;
 
-const ACT = { f: 'fwd', l: 'left', r: 'right', d: 'dash', w: 'wait', b: 'honk', a: 'alarm', o: 'open', c: 'close', u: 'up', n: 'down' };
+const ACT = { f: 'fwd', l: 'left', r: 'right', d: 'dash', w: 'wait', b: 'call', a: 'alarm', o: 'open', c: 'close', u: 'up', n: 'down' };
 const EVT = { s: 'start', e: 'see', c: 'coin', k: 'key', p: 'plate', a: 'alarm' };
 const CND = { w: 'wall', e: 'see' };
 const flip = (o) => Object.fromEntries(Object.entries(o).map(([k, v]) => [v, k]));
@@ -23,7 +23,7 @@ export const BLOCKS = {
   right: { label: 'sağa dön', icon: 'turnR', cls: 'b-move' },
   dash: { label: 'koş', icon: 'dash', cls: 'b-move' },
   wait: { label: 'bekle', icon: 'wait', cls: 'b-calm' },
-  honk: { label: 'korna çal', icon: 'honk', cls: 'b-loud' },
+  call: { label: 'bağır', icon: 'call', cls: 'b-loud' },
   alarm: { label: 'alarm çal', icon: 'alarm', cls: 'b-loud' },
   open: { label: 'açıl', icon: 'open', cls: 'b-gear' },
   close: { label: 'kapan', icon: 'close', cls: 'b-gear' },
@@ -34,15 +34,15 @@ export const BLOCKS = {
   if: { label: 'eğer', icon: 'ask', cls: 'b-logic', body: true },
   on: { label: 'olunca', icon: 'bolt', cls: 'b-event', body: true },
 };
-export const CONDS = { wall: 'önüm kapalıysa', see: 'şövalyeyi görüyorsam' };
+export const CONDS = { wall: 'önüm kapalıysa', see: 'hırsızı görüyorsam' };
 export const EVENTS = {
-  start: 'oyun başlayınca', see: 'şövalyeyi görünce', coin: 'altın alınınca',
+  start: 'oyun başlayınca', see: 'hırsızı görünce', coin: 'altın alınınca',
   key: 'anahtar alınınca', plate: 'düğmeye basılınca', alarm: 'alarm çalınca',
 };
 
-/** Hangi tür neyi yapabilir. Kapı yürüyemez, robot açılıp kapanamaz. */
+/** Hangi tür neyi yapabilir. Kapı yürüyemez, şövalye açılıp kapanamaz. */
 export const KIND_BLOCKS = {
-  guard: ['fwd', 'left', 'right', 'dash', 'wait', 'honk', 'alarm', 'repeat', 'forever', 'if', 'on'],
+  guard: ['fwd', 'left', 'right', 'dash', 'wait', 'call', 'alarm', 'repeat', 'forever', 'if', 'on'],
   door: ['open', 'close', 'wait', 'repeat', 'forever', 'on'],
   spikes: ['up', 'down', 'wait', 'repeat', 'forever', 'on'],
 };
@@ -51,7 +51,7 @@ export const KIND_EVENTS = {
   door: ['start', 'coin', 'key', 'plate', 'alarm'],
   spikes: ['start', 'coin', 'key', 'plate', 'alarm'],
 };
-export const KIND_NAMES = { guard: 'Robot', door: 'Kapı', spikes: 'Diken' };
+export const KIND_NAMES = { guard: 'Şövalye', door: 'Kapı', spikes: 'Diken' };
 
 const MAX_DEPTH = 6, MAX_NODES = 150;
 
@@ -203,13 +203,13 @@ export function progFits(prog, kind) {
  * Kapının ve dikenin kendi blokları (açıl, kapan, çıkar, indir) parça açılınca gelir.
  */
 export const GIVES = {
-  3: { tag: 'atölye', title: 'Atölye açıldı!', text: 'Artık kendi kaleni kurabilirsin.', pieces: ['wall', 'knight', 'chest', 'guard'], blocks: ['fwd', 'left', 'right', 'wait', 'honk'] },
-  4: { tag: 'tekrarla', title: 'Yeni blok: tekrarla', text: 'Atölyede robotların artık döngü kurabilir.', blocks: ['repeat'] },
+  3: { tag: 'atölye', title: 'Atölye açıldı!', text: 'Artık kendi kaleni kurabilirsin.', pieces: ['wall', 'intruder', 'chest', 'guard'], blocks: ['fwd', 'left', 'right', 'wait', 'call'] },
+  4: { tag: 'tekrarla', title: 'Yeni blok: tekrarla', text: 'Atölyede şövalyelerin artık döngü kurabilir.', blocks: ['repeat'] },
   5: { tag: 'altın', title: 'Yeni parça: altın', text: 'Kalene altın serpiştirebilirsin.', pieces: ['coin'] },
   6: { tag: 'sürekli tekrarla, diken', title: 'Yeni blok: sürekli tekrarla', text: 'Yeni parça da var: inip çıkan dikenler.', blocks: ['forever'], pieces: ['spikes'] },
   7: { tag: 'kapı', title: 'Yeni parça: kapı', text: 'Kapıya da program yazılır: ne zaman açılsın, ne zaman kapansın?', pieces: ['door'] },
-  8: { tag: 'eğer / değilse', title: 'Yeni blok: eğer / değilse', text: 'Robotların artık önüne bakıp karar verebilir.', blocks: ['if'], conds: ['wall'] },
-  9: { tag: 'koş, görüş', title: 'Yeni bloklar: koş ve "görüyorsam"', text: 'Robotların şövalyeyi görünce koşabilir.', blocks: ['dash'], conds: ['see'] },
+  8: { tag: 'eğer / değilse', title: 'Yeni blok: eğer / değilse', text: 'Şövalyelerin artık önüne bakıp karar verebilir.', blocks: ['if'], conds: ['wall'] },
+  9: { tag: 'koş, görüş', title: 'Yeni bloklar: koş ve "görüyorsam"', text: 'Şövalyelerin hırsızı görünce koşabilir.', blocks: ['dash'], conds: ['see'] },
   10: { tag: 'olaylar, anahtar, düğme', title: 'Yeni blok: olunca', text: 'Yeni parçalar: anahtar ve düğme. Bir şey olunca ne olacağını sen yaz.', blocks: ['on'], events: ['coin', 'key', 'plate', 'see'], pieces: ['key', 'plate'] },
   11: { tag: 'alarm', title: 'Yeni blok: alarm çal', text: 'Kalendeki her şey artık birbirine haber verebilir.', blocks: ['alarm'], events: ['alarm'] },
 };

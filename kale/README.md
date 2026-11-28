@@ -1,66 +1,66 @@
-# Robot Kalesi
+# Şövalye Kalesi
 
 Çocuklar için blok kodlama oyunu (9 yaş ve çevresi). Kod Pilotu'ndan bağımsız, sıfırdan tasarlandı;
 aynı depoda `kale/` klasöründe durur ve onun hiçbir dosyasını kullanmaz.
 
 Fikir: çocuk bulmaca çözmekle kalmaz, **kendi oyununu kurar**. Bir kale çizer; içine koyduğu her
-robota, kapıya ve dikene program yazar. Sonra telefonu babasına verir (ya da bağlantı gönderir):
-baba şövalyeyle hazineye ulaşmaya çalışır. Kaleyi yenmenin yolu, çocuğun yazdığı programı okumaktır.
+şövalyeye, kapıya ve dikene program yazar. Sonra telefonu babasına verir (ya da bağlantı gönderir):
+baba hırsızla hazineye ulaşmaya çalışır. Kaleyi yenmenin yolu, çocuğun yazdığı programı okumaktır.
 
 Yayındaki adres: `https://isinanyavuz-cmd.github.io/codepilot/kale/`
 
 ## Nasıl oynanır
 
-Oyun **tur tur** ilerler: önce şövalye bir hamle yapar, sonra kaledeki programlı her şey programından
+Oyun **tur tur** ilerler: önce hırsız bir hamle yapar, sonra kaledeki programlı her şey programından
 **tek bir hareket** yapar. Refleks gerekmez; düşünmek ve zamanlamak gerekir.
 
-- **Robot Okulu**: on bir kısa ders. Her ders tek bir fikir öğretir ve atölyeye yeni bir blok ya da
+- **Şövalye Okulu**: on bir kısa ders. Her ders tek bir fikir öğretir ve atölyeye yeni bir blok ya da
   parça açar. Yıldız ve puan yoktur; ödül, atölyede kullanılacak yeni şeydir.
 - **Atölye** (3. dersten sonra açılır): kareleri doldur, parçalara program yaz, «Oyna» ile kendin
   bitir. Kendi bitirdiğin kale **kanıtlanmış** olur ve paylaşılabilir; böylece çözülemeyen kale
   gönderilemez. Örnek kaleler önce oynanır, sonra kopyalanıp değiştirilir.
-- **Usta işi**: atölyenin uzun soluklu hedefi (döngülü bir robot, olaya bağlı bir parça, bitirilmiş
+- **Usta işi**: atölyenin uzun soluklu hedefi (döngülü bir şövalye, olaya bağlı bir parça, bitirilmiş
   ve birine oynatılmış bir kale). Bulmaca çözerek değil, kale kurarak tamamlanır.
 
 | Ders | Fikir | Atölyeye açtığı |
 |---|---|---|
 | 1 İlk Adım | bloklar sırayla çalışır | |
 | 2 Köşe | dönmek yürümek değildir | |
-| 3 Yanlış Dönüş | hata bulup düzeltmek | atölye, robot, duvar |
+| 3 Yanlış Dönüş | hata bulup düzeltmek | atölye, şövalye, duvar |
 | 4 Uzun Koridor | tekrarla | tekrarla |
 | 5 Kare Tur | döngünün içinde birden çok blok | altın |
 | 6 Nöbet | sürekli tekrarla | sürekli tekrarla, diken |
 | 7 Tahmin Et | programı okuyup sonucu kestirmek | kapı |
 | 8 Duvara Kadar | eğer / değilse, "önüm kapalıysa" | eğer / değilse |
-| 9 Gözcü | "şövalyeyi görüyorsam" | koş, görüş |
+| 9 Gözcü | "hırsızı görüyorsam" | koş, görüş |
 | 10 Tuzak Kapı | olaylar: "altın alınınca" | olunca, anahtar, düğme |
 | 11 Alarm | parçalar birbirine haber verir | alarm çal / alarm çalınca |
 
-Çok denemeli derslerde (8–11) aynı program her denemede tutmalıdır: şövalye her seferinde başka
+Çok denemeli derslerde (8–11) aynı program her denemede tutmalıdır: hırsız her seferinde başka
 yoldan ya da başka zamanda gelir. Yolu ezberleyen ya da turları sayan program öteki denemede kalır.
 
 ### Bloklar
 
-- **Robot**: ileri git, sola dön, sağa dön, koş (bir turda iki kare), bekle, korna çal, alarm çal.
+- **Şövalye**: ileri git, sola dön, sağa dön, koş (bir turda iki kare), bekle, bağır, alarm çal.
 - **Kapı**: açıl, kapan, bekle. **Diken**: dikenleri çıkar, dikenleri indir, bekle.
 - **Hepsi**: tekrarla, sürekli tekrarla, «olunca» (oyun başlayınca, altın alınınca, anahtar alınınca,
-  düğmeye basılınca, alarm çalınca; robotta ayrıca şövalyeyi görünce).
-- **Yalnız robot**: eğer / değilse (önüm kapalıysa, şövalyeyi görüyorsam).
+  düğmeye basılınca, alarm çalınca; şövalyede ayrıca hırsızı görünce).
+- **Yalnız şövalye**: eğer / değilse (önüm kapalıysa, hırsızı görüyorsam).
 
 Kapının anahtarla açılması gibi kurallar oyuna gömülü değildir: çocuk yazar ("anahtar alınınca: açıl").
 
 ### Dönüşler neden "sola / sağa"?
 
-Robot **kendi** soluna ve sağına döner; ekranın soluna ve sağına değil. Aşağı bakan robotun solu ekranın
+Şövalye **kendi** soluna ve sağına döner; ekranın soluna ve sağına değil. Aşağı bakan şövalyenin solu ekranın
 sağıdır ve çocukların en sık yaptığı hata budur (3. ders bu hatayı bulup düzeltme dersidir). Yine de
 "yukarı / aşağı / sola / sağa git" blokları yerine bu seçildi, çünkü programlamanın asıl fikirleri ona
-dayanır: "4 kez: iki ileri, sağa dön" yalnız dönüş robota göreyse kare çizer; "önüm kapalıysa" ve
-"şövalyeyi görüyorsam" da robotun baktığı yöne göredir. Aynı program, robot nereye bakarak konursa
+dayanır: "4 kez: iki ileri, sağa dön" yalnız dönüş şövalyeye göreyse kare çizer; "önüm kapalıysa" ve
+"hırsızı görüyorsam" da şövalyenin baktığı yöne göredir. Aynı program, şövalye nereye bakarak konursa
 konsun çalışır.
 
-Ekranda okunması için iki şey yapıldı: robot tepeden görünür ve önü bellidir (gözler, kollar, sarı
-ışık); dönüş bloklarının ikonu ekranda görülen dönüşün kendisidir (sola dön: saatin tersine, sağa dön:
-saat yönünde) ve robot nereye bakarsa baksın doğrudur.
+Ekranda okunması için iki şey yapıldı: şövalye tepeden görünür ve önü bellidir (ileri uzanan kılıç,
+miğferin siperi, kalkan); dönüş bloklarının ikonu ekranda görülen dönüşün kendisidir (sola dön: saatin tersine, sağa dön:
+saat yönünde) ve şövalye nereye bakarsa baksın doğrudur.
 
 ### Telefonda
 
@@ -113,7 +113,7 @@ Testlerin denetledikleri, kural olarak:
 ### Yeni ders eklemek
 
 `src/dersler.js` içindeki `LESSONS` listesine eklenir. Alan metinle çizilir (`.` zemin, `#` duvar,
-`S` şövalye, `H` hazine, `a` altın, `k` anahtar, `d` düğme, `F` bayrak); programlar kısa yazımla verilir:
+`S` hırsız, `H` hazine, `a` altın, `k` anahtar, `d` düğme, `F` bayrak); programlar kısa yazımla verilir:
 
 ```js
 {
@@ -126,16 +126,17 @@ Testlerin denetledikleri, kural olarak:
 }
 ```
 
-Kısa yazım: `f` ileri, `l` sola dön, `r` sağa dön, `d` koş, `w` bekle, `b` korna çal, `a` alarm çal,
+Kısa yazım: `f` ileri, `l` sola dön, `r` sağa dön, `d` koş, `w` bekle, `b` bağır, `a` alarm çal,
 `o` açıl, `c` kapan, `u` dikenleri çıkar, `n` dikenleri indir; `R4(…)` tekrarla, `F(…)` sürekli
-tekrarla, `Iw(…)(…)` eğer önüm kapalıysa / değilse, `Ie(…)(…)` eğer şövalyeyi görüyorsam;
+tekrarla, `Iw(…)(…)` eğer önüm kapalıysa / değilse, `Ie(…)(…)` eğer hırsızı görüyorsam;
 `@s(…)` başlayınca, `@e` görünce, `@c` altın, `@k` anahtar, `@p` düğme, `@a` alarm.
 Derse bir şey açtırmak için `src/bloklar.js` içindeki `GIVES` tablosuna satır eklenir.
 
-Kodda programlanan yürüyen parçanın adı `guard`'dır (bekçi); ekranda "robot" olarak görünür. Karakter
-değişecekse `src/cizim.js` içindeki `guard()` çizimi ve metinlerdeki "robot" sözü değişir; kurallar
-aynı kalır. İlk sürümde bu parça canavardı: eski kayıtlar (`monster`) ve eski bağlantılar (`m`)
-`src/kaleler.js` içinde robota çevrilerek açılır.
+Kodda adlar role göredir, karaktere göre değil: programlanan yürüyen parça `guard` (bekçi), kaleye
+girip hazineye ulaşmaya çalışan `intruder`. Ekranda bekçi "şövalye", giren "hırsız" olarak görünür.
+Karakter değişecekse `src/cizim.js` içindeki `guard()` ve `intruder()` çizimleri ile metinlerdeki
+sözler değişir; kurallar aynı kalır. Bekçi önce canavar, sonra robottu: eski kayıtlar (`monster`) ve
+eski bağlantılar (`m`) `src/kaleler.js` içinde bekçiye çevrilerek açılır.
 
 ## Bilinen eksikler
 

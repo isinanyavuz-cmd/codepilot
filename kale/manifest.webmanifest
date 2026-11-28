@@ -1,7 +1,7 @@
 {
-  "name": "Robot Kalesi",
-  "short_name": "Robot Kalesi",
-  "description": "Robotlarını programla, kaleni kur, hazineni koru.",
+  "name": "Şövalye Kalesi",
+  "short_name": "Şövalye Kalesi",
+  "description": "Şövalyelerini programla, kaleni kur, hazineni koru.",
   "lang": "tr",
   "start_url": "./",
   "scope": "./",

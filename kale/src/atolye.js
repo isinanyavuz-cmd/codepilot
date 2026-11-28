@@ -1,5 +1,5 @@
 // Atölye: kale listesi ve kale kurma ekranı. Oyunun merkezi burasıdır: çocuk kareleri doldurur,
-// koyduğu her robota, kapıya ve dikene program yazar, kalesini kendisi bitirir ve birine oynatır.
+// koyduğu her şövalyeye, kapıya ve dikene program yazar, kalesini kendisi bitirir ve birine oynatır.
 import { buildLevel, initState } from './motor.js';
 import { parseProg, printProg, toolsFor, lessonFor, KIND_NAMES } from './bloklar.js';
 import { paint, masterChecks, SAMPLES } from './kaleler.js';
@@ -9,16 +9,16 @@ import { PIECES } from './cizim.js';
 import { h, ic, ask, topbar } from './arayuz.js';
 import { sfx } from './ses.js';
 
-const TOOL_ORDER = ['select', 'wall', 'erase', 'knight', 'chest', 'guard', 'coin', 'spikes', 'door', 'key', 'plate'];
+const TOOL_ORDER = ['select', 'wall', 'erase', 'intruder', 'chest', 'guard', 'coin', 'spikes', 'door', 'key', 'plate'];
 const FREE_TOOLS = new Set(['select', 'erase']);
 const DELETE = Symbol('sil');
 const TOOL_TIP = {
   select: 'Bir parçaya dokun: programını yaz.',
   wall: 'Duvar: karelere dokun ya da parmağını sürükle.',
   erase: 'Sil: kaldırmak istediğin kareye dokun.',
-  knight: 'Şövalye buradan başlar: yeni yerine dokun.',
+  intruder: 'Hırsız buradan başlar: yeni yerine dokun.',
   chest: 'Hazine: yeni yerine dokun.',
-  guard: 'Robot: koymak istediğin kareye dokun.',
+  guard: 'Şövalye: koymak istediğin kareye dokun.',
   coin: 'Altın: koymak istediğin karelere dokun.',
   spikes: 'Diken: koymak istediğin kareye dokun.',
   door: 'Kapı: koymak istediğin kareye dokun.',

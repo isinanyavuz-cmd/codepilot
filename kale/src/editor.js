@@ -9,7 +9,7 @@ import { h, ic, choose } from './arayuz.js';
 import { sfx } from './ses.js';
 
 // Palette yer dar: uzun adlar kısaltılır. Programa konan blok tam adını gösterir.
-const PAL_LABEL = { honk: 'korna', alarm: 'alarm', repeat: 'tekrarla', forever: 'sürekli', if: 'eğer', on: 'olunca', up: 'çıkar', down: 'indir' };
+const PAL_LABEL = { alarm: 'alarm', repeat: 'tekrarla', forever: 'sürekli', if: 'eğer', on: 'olunca', up: 'çıkar', down: 'indir' };
 const DRAG_START = 8;     // parmak bu kadar piksel oynamadan sürükleme başlamaz: dokunuş dokunuş kalır
 const EDGE = 34;          // sürüklerken program alanının bu kadar kenarına gelinince alan kayar
 const HEAD = 38;          // bir blok satırının boyu (stil.css ile aynı)

@@ -1,31 +1,34 @@
 // Çizimler: her şey küçük, elle yazılmış SVG. Resim dosyası yok; her ekranda keskin durur.
-// Robot tepeden görünür ve baktığı yöne döndürülür: kafası, kolları ve sarı ışığı önündedir.
-// Yüzünde yalnız yuvarlak gözler vardır; böylece aşağı bakarken "baş aşağı" görünmez.
+// Şövalye (bekçi) tepeden görünür ve baktığı yöne döndürülür: kılıcı ileri uzanır, miğferinin siperi
+// ve kalkanı önündedir. Yüzü yoktur; böylece aşağı bakarken "baş aşağı" görünmez.
+// Hırsızı oyuncu yürütür; o döndürülmez, bu yüzden karşıdan çizilir.
 
 export const GUARD_COLORS = ['#8b5cf6', '#1fae7a', '#f2784b', '#3b9ae8', '#e85d9b', '#c9a227'];
 const svg = (body) => `<svg viewBox="0 0 48 48" aria-hidden="true">${body}</svg>`;
 
 export const guard = (color = GUARD_COLORS[0]) => svg(`
-  <rect x="4.5" y="15" width="9" height="28" rx="4" fill="#2a2d44"/><rect x="34.5" y="15" width="9" height="28" rx="4" fill="#2a2d44"/>
-  <path d="M6 22h6M6 28h6M6 34h6M6 40h6M36 22h6M36 28h6M36 34h6M36 40h6" stroke="#6a7090" stroke-width="1.6" stroke-linecap="round"/>
-  <rect x="10" y="16" width="28" height="28" rx="8" fill="${color}" stroke="#0005" stroke-width="1.2"/>
-  <rect x="15" y="29" width="18" height="10" rx="4" fill="#0003"/>
-  <circle cx="20" cy="34" r="2" fill="#fff9"/><circle cx="28" cy="34" r="2" fill="#fff9"/>
-  <rect x="6.5" y="5" width="6" height="12" rx="3" fill="#aab1c6" stroke="#5d6480" stroke-width="1"/><rect x="35.5" y="5" width="6" height="12" rx="3" fill="#aab1c6" stroke="#5d6480" stroke-width="1"/>
-  <rect x="12" y="6" width="24" height="18" rx="8" fill="#e6e9f2" stroke="#7d859b" stroke-width="1.3"/>
-  <rect x="15" y="9.5" width="18" height="9" rx="4.5" fill="#221c3a"/>
-  <circle cx="20" cy="14" r="2.8" fill="#7df9ff"/><circle cx="28" cy="14" r="2.8" fill="#7df9ff"/>
-  <path d="M24 6V3" stroke="#7d859b" stroke-width="1.6" stroke-linecap="round"/>
-  <circle cx="24" cy="2.6" r="2.4" fill="#ffd04a" stroke="#a87b12" stroke-width=".8"/>`);
+  <ellipse cx="24" cy="29.5" rx="16" ry="12.5" fill="${color}" stroke="#0005" stroke-width="1.2"/>
+  <path d="M13 35q11 7 22 0" fill="none" stroke="#0003" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="9.5" cy="18.5" r="6.8" fill="#f4c542" stroke="#a87b12" stroke-width="1.4"/><circle cx="9.5" cy="18.5" r="2.3" fill="#a87b12"/>
+  <path d="M38.5.8 40.4 4.5V19h-3.8V4.5z" fill="#eef1f7" stroke="#7d859b" stroke-width="1" stroke-linejoin="round"/>
+  <rect x="33.5" y="18.3" width="10" height="3.2" rx="1.5" fill="#f4c542" stroke="#a87b12" stroke-width=".8"/>
+  <circle cx="38.5" cy="24.5" r="3.5" fill="#aab1c6" stroke="#5d6480" stroke-width="1"/>
+  <circle cx="24" cy="24" r="11" fill="#d9deea" stroke="#7d859b" stroke-width="1.5"/>
+  <rect x="16.5" y="15" width="15" height="4.2" rx="2.1" fill="#2a2d44"/>
+  <path d="M24 21.5V35.5" stroke="#e5484d" stroke-width="4.2" stroke-linecap="round"/>
+  <path d="M24 21.5V35.5" stroke="#fff5" stroke-width="1.2" stroke-linecap="round"/>`);
 
-export const knight = () => svg(`
+export const intruder = () => svg(`
   <ellipse cx="24" cy="43.5" rx="11" ry="3" fill="#0003"/>
-  <path d="M24 10C29 0 39 3 36 13 32 8 28 9 24 13z" fill="#e5484d" stroke="#0004" stroke-width="1"/>
-  <rect x="15" y="27" width="18" height="15" rx="5" fill="#4a6fd6" stroke="#0005" stroke-width="1.2"/>
-  <circle cx="24" cy="20" r="11.5" fill="#d9deea" stroke="#7d859b" stroke-width="1.5"/>
-  <rect x="15.5" y="17" width="17" height="6" rx="2.6" fill="#2a2d44"/>
-  <circle cx="20.5" cy="20" r="1.4" fill="#fff"/><circle cx="27.5" cy="20" r="1.4" fill="#fff"/>
-  <path d="M30 29h11v6q0 6-5.5 8.5Q30 41 30 35z" fill="#f4c542" stroke="#a87b12" stroke-width="1.3"/>`);
+  <path d="M33.8 25.8 35.5 22.5h3l1.5 3.3z" fill="#c9a36a" stroke="#7a5a2e" stroke-width="1.1" stroke-linejoin="round"/>
+  <circle cx="37" cy="31.5" r="6.5" fill="#c9a36a" stroke="#7a5a2e" stroke-width="1.3"/>
+  <rect x="15" y="27" width="18" height="15" rx="5" fill="#f4f1ff" stroke="#0005" stroke-width="1.2"/>
+  <path d="M15.8 31.5h16.4M15.5 36.2h17" stroke="#2a2d44" stroke-width="2.6"/>
+  <circle cx="24" cy="19" r="11.5" fill="#f3cfae" stroke="#9c7a5c" stroke-width="1.3"/>
+  <path d="M12.2 18.5a11.8 11.8 0 0 1 23.6 0z" fill="#2a2d44"/>
+  <rect x="12.8" y="16.3" width="22.4" height="6.8" rx="3.4" fill="#2a2d44"/>
+  <circle cx="20" cy="19.7" r="1.9" fill="#fff"/><circle cx="28" cy="19.7" r="1.9" fill="#fff"/>
+  <path d="M20.5 26q3.5 2.4 7 0" fill="none" stroke="#7a4a2e" stroke-width="1.6" stroke-linecap="round"/>`);
 
 export const chest = () => svg(`
   <ellipse cx="24" cy="41.5" rx="16" ry="3" fill="#0003"/>
@@ -83,9 +86,9 @@ export const PIECES = {
   select: { label: 'Seç', art: hand },
   wall: { label: 'Duvar', art: wall },
   erase: { label: 'Sil', art: eraser },
-  knight: { label: 'Şövalye', art: knight },
+  intruder: { label: 'Hırsız', art: intruder },
   chest: { label: 'Hazine', art: chest },
-  guard: { label: 'Robot', art: () => guard(GUARD_COLORS[0]) },
+  guard: { label: 'Şövalye', art: () => guard(GUARD_COLORS[0]) },
   coin: { label: 'Altın', art: coin },
   spikes: { label: 'Diken', art: spikes },
   door: { label: 'Kapı', art: door },
@@ -105,12 +108,12 @@ const ICONS = {
   arrowL: '<path d="M20 12H5M11.5 5.5 5 12l6.5 6.5"/>',
   arrowR: '<path d="M4 12h15M12.5 5.5 19 12l-6.5 6.5"/>',
   dash: '<path d="M6 12 12 6l6 6M6 19.5l6-6 6 6"/>',
-  // Dönüş ikonları ekranda görülen dönüşün kendisidir: robot nereye bakarsa baksın
+  // Dönüş ikonları ekranda görülen dönüşün kendisidir: şövalye nereye bakarsa baksın
   // "sola dön" onu saatin tersine, "sağa dön" saat yönünde çevirir.
   turnL: `<path d="M5.94 16A7 7 0 1 0 8.5 6.44"/><path ${full(1.2)} d="M3.7 9.2 11.1 9.9 6.8 2.5z"/>`,
   turnR: `<path d="M18.06 16A7 7 0 1 1 15.5 6.44"/><path ${full(1.2)} d="M20.3 9.2 12.9 9.9 17.2 2.5z"/>`,
   wait: '<circle cx="12" cy="12" r="8"/><path d="M12 7.5V12l3 2.5"/>',
-  honk: `${SPEAKER}<path d="M16.5 8.5a5 5 0 0 1 0 7"/>`,
+  call: `${SPEAKER}<path d="M16.5 8.5a5 5 0 0 1 0 7"/>`,
   alarm: `<path ${full()} d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 1.5h-15z"/><path d="M10.5 21.5h3"/>`,
   open: `<path d="M5 20.5v-17h14v17"/><path ${full()} d="M5 3.5 11 6.5V21l-6-.5z"/>`,
   close: `<rect ${full()} x="5.5" y="3.5" width="13" height="17" rx="1.5"/><circle cx="15" cy="12.5" r="1.4" fill="#0009" stroke="none"/>`,

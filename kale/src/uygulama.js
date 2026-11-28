@@ -1,4 +1,4 @@
-// Robot Kalesi: giriş. Ekranlar arasında adres çubuğundaki "#…" ile gezilir; böylece telefonun
+// Şövalye Kalesi: giriş. Ekranlar arasında adres çubuğundaki "#…" ile gezilir; böylece telefonun
 // geri tuşu da bir önceki ekrana döner.
 //   #            ana ekran          #okul        ders listesi       #ders/4     ders
 //   #atolye      kale listesi       #kur/k3      kale kurma         #oyna/k3    kendi kaleni dene
@@ -75,7 +75,7 @@ const ctx = {
     const url = `${location.origin}${location.pathname}#k=${encodeCastle(castle)}`;
     const done = () => { castle.shared = true; ctx.save(); celebrate(); };
     try {
-      if (navigator.share) { await navigator.share({ title: 'Robot Kalesi', text: `«${castle.name}» kaleme girebilir misin?`, url }); done(); return; }
+      if (navigator.share) { await navigator.share({ title: 'Şövalye Kalesi', text: `«${castle.name}» kaleme girebilir misin?`, url }); done(); return; }
       await navigator.clipboard.writeText(url);
       toast('Bağlantı kopyalandı: istediğine gönder.');
       done();
@@ -114,14 +114,14 @@ function homeScreen() {
           h('span', { class: 'a m1', html: art.guard(art.GUARD_COLORS[0]) }),
           h('span', { class: 'a ch', html: art.chest() }),
           h('span', { class: 'a m2', html: art.guard(art.GUARD_COLORS[1]) }),
-          h('span', { class: 'a kn', html: art.knight() })),
-        h('h1', { class: 'logo', text: 'Robot Kalesi' }),
-        h('p', { class: 'tagline', text: data.master ? 'Hoş geldin, Kale Ustası!' : 'Robotlarını programla, kaleni kur, hazineni koru.' })),
+          h('span', { class: 'a kn', html: art.intruder() })),
+        h('h1', { class: 'logo', text: 'Şövalye Kalesi' }),
+        h('p', { class: 'tagline', text: data.master ? 'Hoş geldin, Kale Ustası!' : 'Şövalyelerini programla, kaleni kur, hazineni koru.' })),
       next && h('button', { class: 'card big go', onclick: () => ctx.go(`ders/${next.id}`) },
         h('span', { class: 'card-title', text: done ? 'Devam et' : 'Başla' }),
         h('span', { class: 'card-sub', text: `${next.id}. ders: ${next.title}` })),
       h('button', { class: 'card big', onclick: () => ctx.go('okul') },
-        h('span', { class: 'card-title', text: 'Robot Okulu' }),
+        h('span', { class: 'card-title', text: 'Şövalye Okulu' }),
         h('span', { class: 'card-sub', text: `${done} / ${LESSONS.length} ders` }),
         h('span', { class: 'bar' }, h('span', { style: `width:${Math.round((done / LESSONS.length) * 100)}%` }))),
       h('button', { class: `card big ${open.workshop ? '' : 'locked'}`, onclick: () => (open.workshop ? ctx.go('atolye') : toast('Atölye 3. dersten sonra açılır.')) },
@@ -133,7 +133,7 @@ function homeScreen() {
 
 function schoolScreen() {
   const el = h('div', { class: 'screen' },
-    topbar('Robot Okulu', { onBack: () => ctx.back('') }),
+    topbar('Şövalye Okulu', { onBack: () => ctx.back('') }),
     h('div', { class: 'scroll' },
       h('p', { class: 'note', text: 'Her ders kısa bir iştir ve atölyeye yeni bir blok ya da parça açar.' }),
       h('div', { class: 'lessons' }, LESSONS.map((l) => {

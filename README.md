@@ -346,11 +346,11 @@ Görev bayrakları: `boss` (son korsan kaptandır), `dock` (çıkışta Atlas'ı
   esbuild ile tek dosyada paketlendi (MIT lisansı).
 - `vendor/fonts/`: Exo 2 yazı tipi (SIL Open Font License).
 
-## Robot Kalesi
+## Şövalye Kalesi
 
-Aynı depoda, `kale/` klasöründe ikinci ve bağımsız bir oyun durur: **Robot Kalesi**. Kod Pilotu'nun
-hiçbir dosyasını kullanmaz; sıfırdan, telefon öncelikli ve iki boyutlu tasarlandı. Çocuk robotları,
-kapıları ve dikenleri programlayarak kendi kalesini kurar, başkası şövalyeyle hazineye ulaşmaya çalışır.
+Aynı depoda, `kale/` klasöründe ikinci ve bağımsız bir oyun durur: **Şövalye Kalesi**. Kod Pilotu'nun
+hiçbir dosyasını kullanmaz; sıfırdan, telefon öncelikli ve iki boyutlu tasarlandı. Çocuk şövalyeleri,
+kapıları ve dikenleri programlayarak kendi kalesini kurar, başkası hırsızla hazineye ulaşmaya çalışır.
 Ayrıntılar: [kale/README.md](kale/README.md). Yerelde `http://localhost:8080/kale/`, yayında
 `https://isinanyavuz-cmd.github.io/codepilot/kale/`. Testleri `npm test` içinde çalışır (`tests/kale.test.js`).
 

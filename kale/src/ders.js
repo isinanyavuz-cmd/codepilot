@@ -143,7 +143,7 @@ export function lessonScreen(ctx, lesson) {
       board.mark(end.x, end.y, ok ? 'right' : 'wrong');
       if (ok) return win();
       tries++; guess = null; sfx('fail');
-      setMsg('Tutmadı: robot işaretli karede durdu. ↺ ile yeni bir başlangıç gelir; bir daha tahmin et.', 'bad');
+      setMsg('Tutmadı: şövalye işaretli karede durdu. ↺ ile yeni bir başlangıç gelir; bir daha tahmin et.', 'bad');
       buttons();
       return;
     }

@@ -1,4 +1,4 @@
-/* Robot Kalesi. Telefon önceliklidir: dikeyde tahta üstte, program altta; geniş ekranda yan yana. */
+/* Şövalye Kalesi. Telefon önceliklidir: dikeyde tahta üstte, program altta; geniş ekranda yan yana. */
 :root {
   --bg: #1b1830; --panel: #272345; --panel2: #38335f; --well: #1e1b36; --line: #4b4578;
   --ink: #f4f1ff; --dim: #aaa4d3; --gold: #ffc94d; --ok: #5fd68b; --green: #2c9f61; --red: #b9404a;
@@ -74,15 +74,15 @@ button.top-title .ic { width: 18px; height: 18px; color: var(--dim); }
 .chest.open .lid { transform: translateY(-22%) rotate(-10deg); }
 .ent { z-index: 3; transition: transform .24s cubic-bezier(.4, 1.4, .6, 1); }
 .ent.door, .ent.spikes { z-index: 2; }
-.ent.knight { z-index: 4; }
+.ent.intruder { z-index: 4; }
 .hop, .spr { width: 100%; height: 100%; }
 .spr { padding: 5%; }
 .guard .spr { transform: rotate(calc(var(--r, 0) * 90deg)); transition: transform .22s; }
 .board.snap .ent, .board.snap .spr, .board.snap svg, .board.snap svg * { transition: none !important; }
 .ent.bump .hop { animation: bump .28s; }
-.ent.honk .hop { animation: honk .42s; }
-.knight.gone .hop { animation: poof .5s forwards; }
-.knight.won .hop { animation: jump .45s 2; }
+.ent.call .hop { animation: call .42s; }
+.intruder.gone .hop { animation: poof .5s forwards; }
+.intruder.won .hop { animation: jump .45s 2; }
 .door .leaf { transform-box: fill-box; transform-origin: left center; transition: transform .22s; }
 .door.on .leaf { transform: scaleX(.14); }
 .spikes .tips { transform-box: fill-box; transform-origin: center bottom; transform: scaleY(0); transition: transform .16s; }
@@ -102,7 +102,7 @@ button.top-title .ic { width: 18px; height: 18px; color: var(--dim); }
 @keyframes bob { 50% { transform: translateY(-8%); } }
 @keyframes pop { 50% { transform: scale(1.3); } }
 @keyframes bump { 40% { transform: translate(calc(var(--bx) * 24%), calc(var(--by) * 24%)); } }
-@keyframes honk { 40% { transform: scale(1.32); } }
+@keyframes call { 40% { transform: scale(1.32); } }
 @keyframes poof { to { transform: rotate(220deg) scale(0); opacity: 0; } }
 @keyframes jump { 50% { transform: translateY(-26%); } }
 @keyframes bub { 0% { transform: translate(-50%, 40%) scale(.4); opacity: 0; } 18% { transform: translate(-50%, 0) scale(1.08); opacity: 1; } 75% { transform: translate(-50%, -10%); opacity: 1; } 100% { transform: translate(-50%, -40%); opacity: 0; } }

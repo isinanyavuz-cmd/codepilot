@@ -6,7 +6,7 @@ export const W = 7, H = 8, MAX_ENTS = 10, MAX_NAME = 24;
 const TERRAIN = '.#SHakd';
 const KINDS = ['guard', 'door', 'spikes'];
 const KIND_CH = { guard: 'g', door: 'd', spikes: 's' };
-// İlk sürümde robotun yerinde canavar vardı: eski kayıtlar ve eski bağlantılar da açılsın.
+// İlk sürümde bekçi canavardı ve türün adı 'monster'dı: eski kayıtlar ve eski bağlantılar da açılsın.
 const OLD_KIND = { monster: 'guard' }, OLD_CH = { m: 'guard' };
 const ITEM_CH = { coin: 'a', key: 'k', plate: 'd' };
 
@@ -31,12 +31,12 @@ const clearCh = (rows, ch) => rows.forEach((r, y) => { const x = r.indexOf(ch); 
 
 /**
  * Kareye bir parça koyar (kaleyi yerinde değiştirir). Dönen: { ok, ent, error }.
- * Araçlar: wall, erase, knight, chest, coin, key, plate, guard, door, spikes.
+ * Araçlar: wall, erase, intruder, chest, coin, key, plate, guard, door, spikes.
  */
 export function paint(castle, tool, x, y, open) {
   const { rows, ents } = castle, at = rows[y][x], ei = ents.findIndex((e) => e.x === x && e.y === y);
   const fixed = at === 'S' || at === 'H';
-  if (fixed && tool !== (at === 'S' ? 'knight' : 'chest')) return { ok: false, error: at === 'S' ? 'Şövalyeyi başka kareye taşı, sonra buraya koy.' : 'Hazineyi başka kareye taşı, sonra buraya koy.' };
+  if (fixed && tool !== (at === 'S' ? 'intruder' : 'chest')) return { ok: false, error: at === 'S' ? 'Hırsızı başka kareye taşı, sonra buraya koy.' : 'Hazineyi başka kareye taşı, sonra buraya koy.' };
   if (fixed) return { ok: false };
   if (tool === 'erase' && at === '.' && ei < 0) return { ok: false };
   if (tool === 'wall' && at === '#') return { ok: false };
@@ -45,7 +45,7 @@ export function paint(castle, tool, x, y, open) {
   let ent = null;
   if (tool === 'wall') setCh(rows, x, y, '#');
   else if (tool === 'erase') setCh(rows, x, y, '.');
-  else if (tool === 'knight') { clearCh(rows, 'S'); setCh(rows, x, y, 'S'); }
+  else if (tool === 'intruder') { clearCh(rows, 'S'); setCh(rows, x, y, 'S'); }
   else if (tool === 'chest') { clearCh(rows, 'H'); setCh(rows, x, y, 'H'); }
   else if (ITEM_CH[tool]) setCh(rows, x, y, ITEM_CH[tool]);
   else if (KINDS.includes(tool)) {
@@ -65,12 +65,12 @@ export function checkCastle(c) {
   if (!Array.isArray(rows) || rows.length < 3 || rows.length > 10) bad('Kalenin boyu tuhaf.');
   const w = typeof rows[0] === 'string' ? rows[0].length : 0;
   if (w < 3 || w > 9) bad('Kalenin eni tuhaf.');
-  let knights = 0, chests = 0;
+  let intruders = 0, chests = 0;
   for (const r of rows) {
     if (typeof r !== 'string' || r.length !== w) bad('Kalenin satırları eşit değil.');
-    for (const ch of r) { if (!TERRAIN.includes(ch)) bad('Kalede tanınmayan bir kare var.'); if (ch === 'S') knights++; if (ch === 'H') chests++; }
+    for (const ch of r) { if (!TERRAIN.includes(ch)) bad('Kalede tanınmayan bir kare var.'); if (ch === 'S') intruders++; if (ch === 'H') chests++; }
   }
-  if (knights !== 1 || chests !== 1) bad('Kalede bir şövalye ve bir hazine olmalı.');
+  if (intruders !== 1 || chests !== 1) bad('Kalede hırsızın gireceği bir yer ve bir hazine olmalı.');
   const list = Array.isArray(c.ents) ? c.ents : bad('Kale okunamadı.');
   if (list.length > MAX_ENTS + 2) bad('Kalede çok fazla parça var.');
   const taken = new Set();
@@ -117,7 +117,7 @@ export function masterChecks(castles) {
   const loops = progs.some((p) => { const u = usedIn(p.prog).blocks; return p.kind === 'guard' && !STARTERS.has(p.text) && (u.has('repeat') || u.has('forever')); });
   const events = progs.some((p) => p.prog.some((h) => h.e !== 'start' && countBlocks([h]) > 0) && p.text !== '@s()@k(o)');
   return [
-    { id: 'loop', text: 'Bir robota kendi döngülü programını yaz', done: loops },
+    { id: 'loop', text: 'Bir şövalyeye kendi döngülü programını yaz', done: loops },
     { id: 'event', text: 'Bir parçayı bir olaya bağla («olunca» bloğu)', done: events, lesson: 10 },
     { id: 'proven', text: 'Kendi kaleni bir kez bitir', done: castles.some((c) => c.proven) },
     { id: 'shared', text: 'Kaleni birine oynat', done: castles.some((c) => c.shared) },

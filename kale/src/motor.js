@@ -1,7 +1,7 @@
-// Robot Kalesi'nin kuralları. Saf mantık: DOM'a dokunmaz, rastgelelik kullanmaz.
+// Şövalye Kalesi'nin kuralları. Saf mantık: DOM'a dokunmaz, rastgelelik kullanmaz.
 //
-// Oyun tur tur ilerler. Her turda önce şövalye bir hamle yapar, sonra kaledeki programlı her şey
-// (robot, kapı, diken) programından TEK bir hareket yapar. step() yeni durumu ve o turda
+// Oyun tur tur ilerler. Her turda önce hırsız bir hamle yapar, sonra kaledeki programlı her şey
+// (şövalye, kapı, diken) programından TEK bir hareket yapar. step() yeni durumu ve o turda
 // olanların listesini (fx) döndürür; çizim bu listeyi oynatır.
 import { parseProg, uid } from './bloklar.js';
 
@@ -10,7 +10,7 @@ export const DY = [-1, 0, 1, 0];
 const MOVE = { U: 0, R: 1, D: 2, L: 3 };
 const ITEM = { a: 'coin', k: 'key', d: 'plate', F: 'flag' };
 const KIND_ACTS = {
-  guard: new Set(['fwd', 'dash', 'left', 'right', 'wait', 'honk', 'alarm']),
+  guard: new Set(['fwd', 'dash', 'left', 'right', 'wait', 'call', 'alarm']),
   door: new Set(['open', 'close', 'wait']),
   spikes: new Set(['up', 'down', 'wait']),
 };
@@ -26,9 +26,9 @@ function compile(prog) {
 
 /**
  * Tarif → oynanabilir kale.
- *   rows: '.' zemin, '#' duvar, 'S' şövalye, 'H' hazine, 'a' altın, 'k' anahtar, 'd' düğme, 'F' bayrak
+ *   rows: '.' zemin, '#' duvar, 'S' hırsız, 'H' hazine, 'a' altın, 'k' anahtar, 'd' düğme, 'F' bayrak
  *   ents: [{ kind: 'guard' | 'door' | 'spikes', x, y, dir, on, prog }]   (on: kapı açık / diken yukarıda başlar)
- *   path: derslerde şövalyenin yazılı yolu ('RRD.L', nokta beklemektir); yoksa şövalyeyi oyuncu yürütür
+ *   path: derslerde hırsızın yazılı yolu ('RRD.L', nokta beklemektir); yoksa hırsızı oyuncu yürütür
  */
 export function buildLevel(spec) {
   const rows = spec.rows, h = rows.length, w = rows[0].length;
@@ -55,9 +55,9 @@ export function buildLevel(spec) {
 export function initState(level) {
   return {
     t: 0,
-    status: 'play',            // 'play' | 'won' (şövalye hazineye vardı) | 'caught' (şövalye yakalandı)
-    by: null,                  // şövalyeyi yakalayanın sırası
-    knight: level.start ? { x: level.start.x, y: level.start.y, dir: 2, alive: true, coins: 0, keys: 0 } : null,
+    status: 'play',            // 'play' | 'won' (hırsız hazineye vardı) | 'caught' (hırsız yakalandı)
+    by: null,                  // hırsızı yakalayanın sırası
+    intruder: level.start ? { x: level.start.x, y: level.start.y, dir: 2, alive: true, coins: 0, keys: 0 } : null,
     got: {},                   // alınan altın ve anahtarların kareleri
     flags: {},                 // bayraklara kaç kez dokunuldu
     queue: [],                 // bir sonraki turda herkese duyurulacak olaylar
@@ -71,25 +71,25 @@ export function initState(level) {
 
 const inside = (level, x, y) => x >= 0 && y >= 0 && x < level.w && y < level.h;
 const doorShut = (level, s, x, y) => { const i = level.doorAt[key(x, y)]; return i !== undefined && !s.ents[i].on; };
-/** Şövalye bu kareye giremez: kale dışı, duvar ya da kapalı kapı. */
+/** Hırsız bu kareye giremez: kale dışı, duvar ya da kapalı kapı. */
 const solid = (level, s, x, y) => !inside(level, x, y) || level.wall[y][x] || doorShut(level, s, x, y);
 const guardAt = (level, s, x, y, except = -1) => s.ents.findIndex((e, i) => i !== except && level.ents[i].kind === 'guard' && e.x === x && e.y === y);
-const knightAt = (s, x, y) => !!s.knight && s.knight.alive && s.knight.x === x && s.knight.y === y;
-/** Robot bu kareye giremez: şövalyenin giremediği yerler, hazine sandığı ve başka bir robot. */
+const intruderAt = (s, x, y) => !!s.intruder && s.intruder.alive && s.intruder.x === x && s.intruder.y === y;
+/** Şövalye bu kareye giremez: hırsızın giremediği yerler, hazine sandığı ve başka bir şövalye. */
 function blocked(level, s, x, y, self) {
   if (solid(level, s, x, y)) return true;
   if (level.chest && level.chest.x === x && level.chest.y === y) return true;
   return guardAt(level, s, x, y, self) >= 0;
 }
 
-/** Robotun baktığı yönde, duvara ya da kapalı kapıya kadar gördüğü kareler. */
+/** Şövalyenin baktığı yönde, duvara ya da kapalı kapıya kadar gördüğü kareler. */
 export function sightCells(level, s, i) {
   const e = s.ents[i], out = [];
   let x = e.x + DX[e.dir], y = e.y + DY[e.dir];
   while (!solid(level, s, x, y)) { out.push({ x, y }); x += DX[e.dir]; y += DY[e.dir]; }
   return out;
 }
-const canSee = (level, s, i) => sightCells(level, s, i).some((c) => knightAt(s, c.x, c.y));
+const canSee = (level, s, i) => sightCells(level, s, i).some((c) => intruderAt(s, c.x, c.y));
 
 function test(level, s, i, cond) {
   const e = s.ents[i];
@@ -99,18 +99,18 @@ function test(level, s, i, cond) {
 }
 
 function caught(s, fx, by) {
-  s.status = 'caught'; s.by = by; s.knight.alive = false;
+  s.status = 'caught'; s.by = by; s.intruder.alive = false;
   fx.push({ t: 'catch', by });
 }
 
-function knightPhase(level, s, move, fx) {
-  const k = s.knight, d = MOVE[move];
+function intruderPhase(level, s, move, fx) {
+  const k = s.intruder, d = MOVE[move];
   if (d === undefined) return;                       // bekle
   k.dir = d;
   const x = k.x + DX[d], y = k.y + DY[d];
-  if (solid(level, s, x, y)) { fx.push({ t: 'bump', who: 'knight', dir: d }); return; }
+  if (solid(level, s, x, y)) { fx.push({ t: 'bump', who: 'intruder', dir: d }); return; }
   k.x = x; k.y = y;
-  fx.push({ t: 'move', who: 'knight' });
+  fx.push({ t: 'move', who: 'intruder' });
   const m = guardAt(level, s, x, y);
   if (m >= 0) return caught(s, fx, m);
   const sp = level.spikesAt[key(x, y)];
@@ -163,7 +163,7 @@ function moveGuard(level, s, i, steps, fx) {
     if (blocked(level, s, x, y, i)) { s.bumps++; fx.push({ t: 'bump', who: i, dir: st.dir }); return; }
     st.x = x; st.y = y;
     fx.push({ t: 'move', who: i });
-    if (knightAt(s, x, y)) return caught(s, fx, i);
+    if (intruderAt(s, x, y)) return caught(s, fx, i);
     const item = level.item[y][x];
     if (item === 'plate') { s.queue.push('plate'); fx.push({ t: 'plate', x, y }); }
     if (item === 'flag') { s.flags[key(x, y)] = (s.flags[key(x, y)] || 0) + 1; fx.push({ t: 'flag', x, y }); }
@@ -179,17 +179,17 @@ function act(level, s, i, fx) {
     case 'dash': moveGuard(level, s, i, 2, fx); break;
     case 'left': st.dir = (st.dir + 3) % 4; fx.push({ t: 'turn', who: i }); break;
     case 'right': st.dir = (st.dir + 1) % 4; fx.push({ t: 'turn', who: i }); break;
-    case 'honk': fx.push({ t: 'honk', who: i }); break;
+    case 'call': fx.push({ t: 'call', who: i }); break;
     case 'alarm': s.queue.push('alarm'); fx.push({ t: 'alarm', who: i }); break;
     case 'open': if (!st.on) { st.on = true; fx.push({ t: 'door', who: i, on: true }); } break;
     case 'close':
       if (!st.on) break;
-      if (knightAt(s, st.x, st.y) || guardAt(level, s, st.x, st.y) >= 0) fx.push({ t: 'jam', who: i });   // kapı arasında biri var
+      if (intruderAt(s, st.x, st.y) || guardAt(level, s, st.x, st.y) >= 0) fx.push({ t: 'jam', who: i });   // kapı arasında biri var
       else { st.on = false; fx.push({ t: 'door', who: i, on: false }); }
       break;
     case 'up':
       if (!st.on) { st.on = true; fx.push({ t: 'spikes', who: i, on: true }); }
-      if (knightAt(s, st.x, st.y)) caught(s, fx, i);
+      if (intruderAt(s, st.x, st.y)) caught(s, fx, i);
       break;
     case 'down': if (st.on) { st.on = false; fx.push({ t: 'spikes', who: i, on: false }); } break;
     default: break;   // bekle
@@ -217,13 +217,13 @@ function entityPhase(level, s, fx) {
 
 /**
  * Bir tur oynatır. `move`: 'U' 'R' 'D' 'L' ya da başka bir şey (bekle). Yazılı yolu olan
- * şövalye (dersler) kendi yolunu yürür; `move` yok sayılır.
+ * hırsız (dersler) kendi yolunu yürür; `move` yok sayılır.
  */
 export function step(level, prev, move) {
   const s = structuredClone(prev), fx = [];
   if (s.status !== 'play') return { state: s, fx };
   s.t++;
-  if (s.knight && s.knight.alive) knightPhase(level, s, level.path ? level.path[s.t - 1] || '.' : move, fx);
+  if (s.intruder && s.intruder.alive) intruderPhase(level, s, level.path ? level.path[s.t - 1] || '.' : move, fx);
   if (s.status === 'play') entityPhase(level, s, fx);
   return { state: s, fx };
 }
@@ -232,10 +232,10 @@ const allIdle = (s) => s.ents.every((e) => !e.stack.length) && !s.queue.length;
 
 /**
  * Ders hedefi tuttu mu? Sürüyorsa null; bitince { ok, why }.
- *   flags: robotlar her bayrağa `times` kez dokunsun
- *   catch: şövalye kaçmadan yakalansın
- *   trap:  şövalye yolunun sonunda `zone` içinde kalsın (kapı arkasından kapansın)
- *   predict: program bitince robot nerede? (cevap `end`)
+ *   flags: şövalyeler her bayrağa `times` kez dokunsun
+ *   catch: hırsız kaçmadan yakalansın
+ *   trap:  hırsız yolunun sonunda `zone` içinde kalsın (kapı arkasından kapansın)
+ *   predict: program bitince şövalye nerede? (cevap `end`)
  */
 export function judge(level, s, goal, limit = 80) {
   const pathDone = !!level.path && s.t >= level.path.length;
@@ -254,7 +254,7 @@ export function judge(level, s, goal, limit = 80) {
   if (goal.type === 'catch') return pathDone ? { ok: false, why: 'escaped' } : null;
   if (goal.type === 'trap') {
     if (!pathDone) return null;
-    const z = goal.zone, k = s.knight;
+    const z = goal.zone, k = s.intruder;
     if (k.x >= z.x0 && k.x <= z.x1 && k.y >= z.y0 && k.y <= z.y1) return { ok: true, why: 'trapped' };
     return { ok: false, why: level.ents.some((e, i) => e.kind === 'door' && !s.ents[i].on) ? 'early' : 'open' };
   }
@@ -279,7 +279,7 @@ export function simulate(level, goal, limit = 80) {
  */
 export function solve(level, maxMoves = 60, maxStates = 200000) {
   const first = initState(level);
-  const sig = (s) => JSON.stringify([s.knight, s.got, s.queue, s.ents.map((e) => [e.x, e.y, e.dir, e.on, e.stack, e.saw])]);
+  const sig = (s) => JSON.stringify([s.intruder, s.got, s.queue, s.ents.map((e) => [e.x, e.y, e.dir, e.on, e.stack, e.saw])]);
   let layer = [{ state: first, moves: '' }];
   const seen = new Set([sig(first)]);
   for (let depth = 0; depth < maxMoves && layer.length; depth++) {

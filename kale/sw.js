@@ -1,4 +1,4 @@
-// Robot Kalesi servis çalışanı: oyun bir kez açıldıktan sonra internetsiz de çalışır.
+// Şövalye Kalesi servis çalışanı: oyun bir kez açıldıktan sonra internetsiz de çalışır.
 // Her dosya önce ağdan, tarayıcı önbelleği atlanarak istenir; böylece yeni sürüm yayımlanınca
 // hemen görülür. Ağ yoksa son indirilen hal açılır.
 const CACHE = 'kale-v1';

@@ -7,7 +7,7 @@ import * as art from './cizim.js';
 const MOVE = { U: 0, R: 1, D: 2, L: 3 };
 const el = (cls, html = '') => { const d = document.createElement('div'); d.className = cls; d.innerHTML = html; return d; };
 const at = (node, x, y) => { node.style.setProperty('--x', x); node.style.setProperty('--y', y); return node; };
-const SAY = { bump: 'GÜM!', honk: 'DÜÜT!', alarm: 'DAN DAN!', catch: 'YAKALADIM!', jam: 'SIKIŞTI!', win: 'HAZİNE!' };
+const SAY = { bump: 'GÜM!', call: 'HEY!', alarm: 'DAN DAN!', catch: 'YAKALADIM!', jam: 'SIKIŞTI!', win: 'HAZİNE!' };
 
 export function createBoard({ onCell } = {}) {
   const root = el('board');
@@ -49,7 +49,7 @@ export function createBoard({ onCell } = {}) {
     root.style.setProperty('--w', lv.w); root.style.setProperty('--h', lv.h);
     root.classList.toggle('mini', mini);
     root.classList.remove('alarm');
-    parts = { ents: [], items: {}, flags: {}, beams: [], knight: null, chest: null, rot: [] };
+    parts = { ents: [], items: {}, flags: {}, beams: [], intruder: null, chest: null, rot: [] };
     for (let y = 0; y < lv.h; y++) for (let x = 0; x < lv.w; x++) {
       const wall = lv.wall[y][x];
       root.append(at(el(`tile ${wall ? 'wall' : (x + y) % 2 ? 'dark' : ''}`, wall ? art.wall() : ''), x, y));
@@ -59,7 +59,7 @@ export function createBoard({ onCell } = {}) {
       root.append(node);
       (item === 'flag' ? parts.flags : parts.items)[`${x},${y}`] = node;
     }
-    if (lv.path && lv.start) {                       // derslerde şövalyenin yolu: ayak izleri
+    if (lv.path && lv.start) {                       // derslerde hırsızın yolu: ayak izleri
       let { x, y } = lv.start;
       const seen = new Set([`${x},${y}`]);
       for (const m of lv.path) {
@@ -81,7 +81,7 @@ export function createBoard({ onCell } = {}) {
       parts.ents.push(node); parts.rot.push(null);
       root.append(node);
     });
-    if (lv.start) { parts.knight = el('ent knight', `<div class="hop"><div class="spr">${art.knight()}</div></div>`); root.append(parts.knight); }
+    if (lv.start) { parts.intruder = el('ent intruder', `<div class="hop"><div class="spr">${art.intruder()}</div></div>`); root.append(parts.intruder); }
   }
 
   const restart = (node, cls) => { node.classList.remove(cls); void node.offsetWidth; node.classList.add(cls); };
@@ -92,7 +92,7 @@ export function createBoard({ onCell } = {}) {
     timers.push(setTimeout(() => b.remove(), 1100));
   }
 
-  /** Durumu çizer; `fx` o turda olanlardır (toslama, korna, yakalama…). `snap`: geçişsiz. */
+  /** Durumu çizer; `fx` o turda olanlardır (toslama, bağırma, yakalama…). `snap`: geçişsiz. */
   function render(state, fx = [], snap = false) {
     if (!level) return;
     if (snap) root.classList.add('snap');
@@ -110,30 +110,30 @@ export function createBoard({ onCell } = {}) {
       if (prev !== null) { const d = ((st.dir - prev) % 4 + 4) % 4; turn = prev + (d === 3 ? -1 : d); }
       parts.rot[i] = turn;
       node.style.setProperty('--r', turn);
-      // Görüşe bakan robotun baktığı kareler hafifçe aydınlanır: "görmek" ne demek, gözle görülsün.
+      // Görüşe bakan şövalyenin baktığı kareler hafifçe aydınlanır: "görmek" ne demek, gözle görülsün.
       const uses = usedIn(e.prog.hats);
       if (state.status === 'play' && (uses.conds.has('see') || uses.events.has('see'))) {
         for (const c of sightCells(level, state, i)) { const b = at(el('beam'), c.x, c.y); parts.beams.push(b); root.append(b); }
       }
     });
-    if (parts.knight && state.knight) {
-      at(parts.knight, state.knight.x, state.knight.y);
-      parts.knight.classList.toggle('gone', state.status === 'caught');
-      parts.knight.classList.toggle('won', state.status === 'won');
+    if (parts.intruder && state.intruder) {
+      at(parts.intruder, state.intruder.x, state.intruder.y);
+      parts.intruder.classList.toggle('gone', state.status === 'caught');
+      parts.intruder.classList.toggle('won', state.status === 'won');
     }
     if (parts.chest) parts.chest.classList.toggle('open', state.status === 'won');
     if (snap) { void root.offsetWidth; root.classList.remove('snap'); }
     for (const f of fx) {
-      const who = f.who === 'knight' ? parts.knight : parts.ents[f.who];
-      const ws = f.who === 'knight' ? state.knight : state.ents[f.who];
+      const who = f.who === 'intruder' ? parts.intruder : parts.ents[f.who];
+      const ws = f.who === 'intruder' ? state.intruder : state.ents[f.who];
       if (f.t === 'bump') {
         who.style.setProperty('--bx', DX[f.dir]); who.style.setProperty('--by', DY[f.dir]);
         restart(who, 'bump');
-        if (f.who !== 'knight') bubble(ws.x, ws.y, SAY.bump);
-      } else if (f.t === 'honk') { restart(who, 'honk'); bubble(ws.x, ws.y, SAY.honk, 'shout'); }
+        if (f.who !== 'intruder') bubble(ws.x, ws.y, SAY.bump);
+      } else if (f.t === 'call') { restart(who, 'call'); bubble(ws.x, ws.y, SAY.call, 'shout'); }
       else if (f.t === 'alarm') { restart(root, 'alarm'); bubble(ws.x, ws.y, SAY.alarm, 'shout'); }
       else if (f.t === 'jam') bubble(ws.x, ws.y, SAY.jam);
-      else if (f.t === 'catch') bubble(state.knight.x, state.knight.y, SAY.catch, 'shout');
+      else if (f.t === 'catch') bubble(state.intruder.x, state.intruder.y, SAY.catch, 'shout');
       else if (f.t === 'win') bubble(level.chest.x, level.chest.y, SAY.win, 'nice');
       else if (f.t === 'pick') bubble(f.x, f.y, '+1', 'nice');
       else if (f.t === 'flag') { const p = parts.flags[`${f.x},${f.y}`]; if (p) restart(p, 'pop'); }
