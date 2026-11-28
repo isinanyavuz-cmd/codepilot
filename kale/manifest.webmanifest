@@ -1,0 +1,13 @@
+{
+  "name": "Canavar Kalesi",
+  "short_name": "Canavar Kalesi",
+  "description": "Canavarlarını programla, kaleni kur, hazineni koru.",
+  "lang": "tr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#1b1830",
+  "theme_color": "#1b1830",
+  "icons": [{ "src": "ikon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

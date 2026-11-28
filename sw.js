@@ -8,7 +8,7 @@
 //   için hiç bayatlamaz; önce önbellek.
 // - bilsem/ artık yalnızca BİLSEM uygulamasının yeni adresine yönlendiren sayfadır; ona dokunulmaz.
 const CACHE = 'kodpilotu-v1';
-const OTHER_APPS = ['/bilsem/'];
+const OTHER_APPS = ['/bilsem/', '/kale/'];   // kale/ (Canavar Kalesi) kendi servis çalışanını kullanır
 const FONTS = [500, 600, 700, 800].flatMap((w) => [`./vendor/fonts/exo-2-latin-${w}-normal.woff2`, `./vendor/fonts/exo-2-latin-ext-${w}-normal.woff2`]);
 const EXTRA = ['./manifest.webmanifest', './icons/icon.svg', './icons/icon-192.png', './icons/apple-touch-icon.png'];
 
