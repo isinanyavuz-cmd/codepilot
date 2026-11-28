@@ -1,11 +1,13 @@
 // 3B modeller: gemi, meteor, kristal. Hepsi kodla üretilir; dışarıdan dosya yüklenmez.
 import * as THREE from '../../vendor/three.bundle.min.js';
 
-const hull = new THREE.MeshStandardMaterial({ color: 0xdfe6f3, roughness: 0.38, metalness: 0.35 });
-const accent = new THREE.MeshStandardMaterial({ color: 0xff6a2b, roughness: 0.45, metalness: 0.2 });
-const dark = new THREE.MeshStandardMaterial({ color: 0x27324f, roughness: 0.5, metalness: 0.5 });
-const glass = new THREE.MeshStandardMaterial({ color: 0x0c2f55, roughness: 0.08, metalness: 0.6, emissive: 0x2fc8ff, emissiveIntensity: 0.55 });
+// Gemi malzemeleri. Gövde rengi ve ışık şeridi rengi hangardan gelir (bkz. styleShip).
+const hull = new THREE.MeshStandardMaterial({ color: 0x808a9a, roughness: 0.6, metalness: 0.35, flatShading: true });
+const dark = new THREE.MeshStandardMaterial({ color: 0x465063, roughness: 0.55, metalness: 0.4, flatShading: true, side: THREE.DoubleSide });
+const panel = new THREE.MeshStandardMaterial({ color: 0x0c1018, roughness: 0.3, metalness: 0.7, side: THREE.DoubleSide });
+const glass = new THREE.MeshStandardMaterial({ color: 0x060a14, roughness: 0.06, metalness: 0.85, emissive: 0x0b2f6a, emissiveIntensity: 0.12 });
 const bright = (hex, k) => new THREE.Color(hex).multiplyScalar(k);
+const accent = new THREE.MeshBasicMaterial({ color: bright(0x4fb4ff, 2.2), side: THREE.DoubleSide });
 const additive = (color, opacity) => new THREE.MeshBasicMaterial({ color, transparent: true, opacity, blending: THREE.AdditiveBlending, depthWrite: false });
 
 let haloTexture = null;
@@ -19,8 +21,8 @@ function wingShape(pts, mirror) {
   s.closePath();
   return s;
 }
-function slab(shape, depth, mat) {
-  const g = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: true, bevelThickness: 0.015, bevelSize: 0.015, bevelSegments: 2 });
+function slab(shape, depth, mat, bevel = 0.015) {
+  const g = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: bevel > 0, bevelThickness: bevel, bevelSize: bevel, bevelSegments: 1 });
   const m = new THREE.Mesh(g, mat);
   m.rotation.x = -Math.PI / 2; m.position.y = -depth / 2;
   return m;
@@ -28,47 +30,116 @@ function slab(shape, depth, mat) {
 
 const lamp = (hex, k = 3) => new THREE.MeshBasicMaterial({ color: bright(hex, k) });
 
-/** Boyuna eksen z olan köşeli (altıgen kesitli) gövde parçası; profil [yarıçap, z] çiftleridir. */
-function facet(prof, mat, sides = 6, flat = 0.62) {
-  const m = new THREE.Mesh(new THREE.LatheGeometry(prof.map(([r, y]) => new THREE.Vector2(r, y)), sides, Math.PI / sides), mat);
-  m.rotation.x = -Math.PI / 2; m.scale.set(1, 1, flat);
-  return m;
+/**
+ * Kesitlerden köşeli gövde. Her kesit { z, pts } biçimindedir; pts sağ yarının [x, y] noktalarıdır
+ * (üst ortadan alt ortaya), sol yarı aynalanır. Yüzeyler düz gölgelenir: zırh plakası görünümü.
+ */
+function loft(stations, mat) {
+  const rings = stations.map(({ z, pts }) => [...pts, ...pts.slice(1, -1).reverse().map(([x, y]) => [-x, y])].map(([x, y]) => [x, y, z]));
+  const v = [], n = rings[0].length, tri = (a, b, c) => v.push(...a, ...b, ...c);
+  for (let i = 0; i + 1 < rings.length; i++) for (let k = 0; k < n; k++) {
+    const a = rings[i][k], b = rings[i][(k + 1) % n], c = rings[i + 1][k], d = rings[i + 1][(k + 1) % n];
+    tri(a, b, c); tri(b, d, c);
+  }
+  const first = rings[0], last = rings[rings.length - 1];
+  for (let k = 1; k + 1 < n; k++) { tri(first[0], first[k + 1], first[k]); tri(last[0], last[k], last[k + 1]); }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(v, 3)); g.computeVertexNormals();
+  return new THREE.Mesh(g, mat);
 }
+/** Kesitleri z'ye göre aradeğerler: gövdenin o noktadaki sağ yarı noktaları. */
+function sectionAt(stations, z) {
+  let i = 0; while (i + 2 < stations.length && stations[i + 1].z < z) i++;
+  const a = stations[i], b = stations[i + 1], t = Math.min(1, Math.max(0, (z - a.z) / (b.z - a.z)));
+  return a.pts.map(([x, y], k) => [x + (b.pts[k][0] - x) * t, y + (b.pts[k][1] - y) * t]);
+}
+/**
+ * Gövdenin bir yüzüne yapışık ince plaka (koyu panel ya da ışık şeridi): `k`. ve `k+1`. kesit noktaları
+ * arasındaki yüzde, z0–z1 boyunca, yüzün t0–t1 dilimini kaplar. `side` = 1 sağ, -1 sol.
+ */
+function plate(stations, z0, z1, k, t0, t1, mat, side, lift = 1.035) {
+  const v = [], N = 6, at = (z, t) => { const p = sectionAt(stations, z), a = p[k], b = p[k + 1]; return [side * (a[0] + (b[0] - a[0]) * t) * lift, (a[1] + (b[1] - a[1]) * t) * lift + 0.002, z]; };
+  for (let i = 0; i < N; i++) {
+    const za = z0 + (z1 - z0) * i / N, zb = z0 + (z1 - z0) * (i + 1) / N;
+    const a = at(za, t0), b = at(za, t1), c = at(zb, t0), d = at(zb, t1);
+    v.push(...a, ...b, ...c, ...b, ...d, ...c);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(v, 3)); g.computeVertexNormals();
+  return new THREE.Mesh(g, mat);
+}
+const box = (w, h, d, mat, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); m.position.set(x, y, z); return m; };
+/** Boyuna ekseni z olan silindir/koni parçası: z0'da r0, z1'de r1 yarıçaplı. */
+const tube = (r0, r1, z0, z1, mat, sides = 14, open = false) => {
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(r1, r0, z1 - z0, sides, 1, open), mat);
+  m.rotation.x = Math.PI / 2; m.position.z = (z0 + z1) / 2;
+  return m;
+};
+
+// Gövde kesitleri (burun -z'de): [üst orta, üst kenar, omuz, yan kırım, alt kenar, alt orta]
+const sec = (z, w, wt, top, ch, bot) => ({ z, pts: [[0, top], [wt, top], [(wt + w) / 2 + 0.012, (top + ch) / 2 + 0.022], [w, ch], [w * 0.55, bot], [0, bot]] });
+const FUSELAGE = [
+  sec(-1.06, 0.095, 0.05, 0.005, -0.035, -0.08),
+  sec(-0.9, 0.14, 0.07, 0.06, -0.03, -0.105),
+  sec(-0.62, 0.195, 0.095, 0.11, -0.025, -0.13),
+  sec(-0.25, 0.245, 0.12, 0.15, -0.02, -0.14),
+  sec(0.12, 0.265, 0.14, 0.16, -0.015, -0.14),
+  sec(0.52, 0.25, 0.135, 0.155, -0.015, -0.13),
+  sec(0.76, 0.18, 0.1, 0.115, -0.01, -0.08),
+];
+const hump = (z, w, top) => ({ z, pts: [[0, top], [w * 0.62, top], [w, 0.12], [0, 0.12]] });
+const HUMP = [hump(-0.06, 0.07, 0.15), hump(0.06, 0.115, 0.235), hump(0.34, 0.115, 0.235), hump(0.5, 0.09, 0.18)];
+// Kanat: gövdeye göre [x, ileri] noktaları; kök x = 0'dadır (grup gövde kenarına oturur).
+const WING = [[-0.05, 0.18], [0.6, -0.28], [0.62, -0.6], [0.38, -0.57], [0.28, -0.63], [-0.05, -0.62]];
+const WING_PANEL = [[0.0, -0.22], [0.36, -0.4], [0.36, -0.55], [0.28, -0.6], [0.0, -0.59]];
+const TAIL = [[0.37, -0.6], [0.68, -0.83], [0.68, -0.94], [0.37, -0.9]];
+const WINGLET = [[0.25, -0.07], [0.42, 0.19], [0.5, 0.235], [0.62, 0.24], [0.68, 0.2], [0.66, -0.07]];
+const ROOT = 0.23, ENGINE_X = 0.285, ENGINE_Y = 0.19, ENGINE_Z = 0.13, SIZE = 0.9;
 
 /**
- * Uzay gemisi; burnu -z yönüne (ekranda yukarı) bakar. Kanat yerine zırhlı, altıgen kesitli
- * bir gövde, yanlarda iki motor kapsülü (gondol), ortada ana motor ve önde kokpit kubbesi vardır.
+ * Uzay gemisi; burnu -z yönüne (ekranda yukarı) bakar. Konsept görseldeki avcı gemisidir: köşeli zırh
+ * plakalı uzun gövde, burunda ikiz namlu, koyu cam kokpit, geriye ok açılı kanatlar ve uçlarında dik
+ * kanatçıklar, sırtta iki büyük motor, kanat ön kenarlarında ve gövde yanlarında ışık şeritleri.
  * `ghostMat` verilirse tek renkli hayalet üretir.
  */
 export function buildShip(ghostMat = null) {
-  const g = new THREE.Group();
-  const H = ghostMat || hull, A = ghostMat || accent, D = ghostMat || dark, G = ghostMat || glass;
+  const ship = new THREE.Group(), g = new THREE.Group();
+  g.scale.setScalar(SIZE); ship.add(g);
+  const H = ghostMat || hull, A = ghostMat || accent, D = ghostMat || dark, G = ghostMat || glass, P = ghostMat || panel;
+  const detail = !ghostMat;
   // Gövde: gövde boyu seçimi (shape.nose) bu grubu z yönünde uzatır.
   const fus = new THREE.Group(); g.add(fus);
-  fus.add(facet([[0, 1.04], [0.07, 0.9], [0.16, 0.6], [0.25, 0.2], [0.3, -0.2], [0.3, -0.5], [0.24, -0.68], [0, -0.68]], H));
-  // Sırt zırhı ve ön yanak plakaları
-  const spine = facet([[0, 0.62], [0.05, 0.5], [0.08, 0.1], [0.09, -0.4], [0.07, -0.62], [0, -0.62]], D, 4, 1.1);
-  spine.position.y = 0.1; fus.add(spine);
+  fus.add(loft(FUSELAGE, H));
+  // İkiz burun namlusu
   for (const s of [-1, 1]) {
-    const cheek = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.09, 0.5), A);
-    cheek.position.set(s * 0.25, 0.04, -0.02); cheek.rotation.y = s * 0.14; fus.add(cheek);
+    const gun = tube(0.022, 0.026, -1.15, -1.02, D, 8); gun.position.x = s * 0.055; gun.position.y = -0.04; fus.add(gun);
+    if (detail) { const tip = new THREE.Mesh(new THREE.CircleGeometry(0.014, 10), A); tip.rotation.y = Math.PI; tip.position.set(s * 0.055, -0.04, -1.151); fus.add(tip); }
   }
-  // Kokpit kubbesi ve çerçevesi
-  const can = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 16, 0, Math.PI * 2, 0, Math.PI / 2), G);
-  can.scale.set(0.12, 0.11, 0.24); can.position.set(0, 0.11, -0.42); fus.add(can);
-  const ring = new THREE.Mesh(new THREE.TorusGeometry(1, 0.12, 6, 24), D);
-  ring.rotation.x = Math.PI / 2; ring.scale.set(0.125, 0.25, 0.3); ring.position.set(0, 0.11, -0.42); fus.add(ring);
-  // Ana motor yuvası
-  const core = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.17, 0.24, 8), D);
-  core.rotation.x = Math.PI / 2; core.position.set(0, 0.02, 0.7); g.add(core);
-  // Hangardaki biçim seçimi için: kapsül kolları (wings), yana açılan parçalar (span), alev malzemeleri.
-  const flames = [], wings = [], span = [], flameMats = [], halos = [];
-  const POD = 0.5;
-  const addFlame = (x, z, r, len) => {
+  // Kokpit: uzun, koyu cam kubbe ve çerçevesi
+  const can = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 14, 0, Math.PI * 2, 0, Math.PI / 2), G);
+  can.scale.set(0.098, 0.095, 0.34); can.position.set(0, 0.11, -0.4); can.rotation.x = 0.13; fus.add(can);
+  const frame = new THREE.Mesh(new THREE.TorusGeometry(1, 0.1, 5, 28), D);
+  frame.rotation.x = Math.PI / 2 + 0.13; frame.scale.set(0.103, 0.35, 0.12); frame.position.set(0, 0.113, -0.4); fus.add(frame);
+  if (detail) for (const s of [-1, 1]) {
+    // Yan gövdedeki koyu paneller, altlarında ışık şeridi; burun üstünde koyu ızgara
+    fus.add(plate(FUSELAGE, -0.56, -0.24, 2, 0.12, 0.86, P, s), plate(FUSELAGE, -0.19, 0.12, 2, 0.12, 0.86, P, s));
+    fus.add(plate(FUSELAGE, -0.6, 0.12, 2, 0.9, 1, A, s, 1.045), plate(FUSELAGE, -0.5, 0.05, 3, 0.1, 0.3, A, s, 1.045));
+    fus.add(plate(FUSELAGE, -0.2, 0.06, 1, 0.1, 0.92, D, s, 1.02), plate(FUSELAGE, -0.98, -0.8, 1, 0.15, 0.9, D, s, 1.02), plate(FUSELAGE, 0.2, 0.6, 2, 0.5, 1, D, s, 1.02));
+    fus.add(plate(FUSELAGE, -0.9, -0.76, 0, 0.25, 0.9, P, s), plate(FUSELAGE, -0.72, -0.69, 1, 0.1, 0.9, A, s, 1.045));
+  }
+  // Sırt bloğu (kokpitin arkası) ve üstündeki kapak
+  g.add(loft(HUMP, H));
+  g.add(box(0.12, 0.03, 0.17, D, 0, 0.245, 0.2));
+  if (detail) g.add(box(0.05, 0.006, 0.012, A, 0, 0.262, 0.13));
+  // Kuyruk ucu: iki motorun arasındaki koyu blok
+  g.add(box(0.26, 0.14, 0.16, D, 0, 0.04, 0.8));
+
+  const flames = [], wings = [], flameMats = [], halos = [];
+  const addFlame = (x, y, z, r, len) => {
     if (ghostMat) return;
-    const noz = new THREE.Mesh(new THREE.CircleGeometry(r * 0.9, 20), lamp(0x8ff0ff, 3));
-    noz.position.set(x, 0.02, z + 0.005); g.add(noz);
-    const flame = new THREE.Group(); flame.position.set(x, 0.02, z);
+    const noz = new THREE.Mesh(new THREE.CircleGeometry(r * 0.92, 20), lamp(0x8fd8ff, 3));
+    noz.position.set(x, y, z - 0.03); g.add(noz);
+    const flame = new THREE.Group(); flame.position.set(x, y, z);
     const outer = new THREE.Mesh(new THREE.ConeGeometry(r, len, 16, 1, true), additive(bright(0x49c8ff, 1.6), 0.75));
     outer.rotation.x = Math.PI / 2; outer.position.z = len / 2; flame.add(outer); flameMats.push(outer.material);
     const inner = new THREE.Mesh(new THREE.ConeGeometry(r * 0.55, len * 0.52, 12, 1, true), additive(bright(0xffffff, 2.5), 0.9));
@@ -76,63 +147,50 @@ export function buildShip(ghostMat = null) {
     g.add(flame); flames.push(flame);
     // Parlama efekti kapalıyken (düşük kalite) alevin çevresine konan yumuşak ışık; açıkken gizlenir.
     const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: haloTex(), color: 0x49c8ff, transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending, depthWrite: false }));
-    halo.position.set(x, 0.02, z + 0.15); halo.scale.setScalar(len); halo.visible = false; g.add(halo); halos.push(halo);
-    return [noz, flame, halo];
+    halo.position.set(x, y, z + 0.15); halo.scale.setScalar(len); halo.visible = false; g.add(halo); halos.push(halo);
   };
-  addFlame(0, 0.81, 0.1, 0.85);
   for (const s of [-1, 1]) {
-    // Gövdeyi kapsüle bağlayan kol (kanat değil, kısa bir kiriş)
-    const arm = new THREE.Mesh(new THREE.BoxGeometry(1, 0.08, 0.3), D);
-    arm.geometry.translate(0.5, 0, 0); arm.scale.x = POD - 0.12; arm.position.set(s * 0.12, 0, 0.36);
-    if (s < 0) arm.rotation.y = Math.PI;
-    g.add(arm); wings.push(arm);
-    const strut = new THREE.Mesh(new THREE.BoxGeometry(1, 0.03, 0.08), A);
-    strut.geometry.translate(0.5, 0, 0); strut.scale.x = POD - 0.12; strut.position.set(s * 0.12, 0.04, 0.3);
-    if (s < 0) strut.rotation.y = Math.PI;
-    g.add(strut); wings.push(strut);
-    // Kolun ön yüzündeki sarı pencere ışıkları
-    if (!ghostMat) for (let i = 0; i < 3; i++) {
-      const win = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.022, 0.01), lamp(0xffd27a, 2.4));
-      win.position.set(s * (0.33 + i * 0.065), 0, 0.205); g.add(win);
-    }
-    // Motor kapsülü: köşeli zırh, renkli burun, halkalar
-    const pod = new THREE.Group(); pod.position.x = s * POD; g.add(pod); span.push({ o: pod, x: s * POD });
-    pod.add(facet([[0, 0.12], [0.11, 0.05], [0.125, -0.3], [0.1, -0.7], [0.115, -0.77], [0, -0.77]], H, 8, 0.85));
-    pod.add(facet([[0, 0.3], [0.05, 0.25], [0.1, 0.14], [0.116, 0.06], [0, 0.06]], A, 8, 0.85));
-    for (const z of [0.22, 0.5]) {
-      const band = new THREE.Mesh(new THREE.TorusGeometry(0.118, 0.016, 6, 16), D);
-      band.position.z = z; band.scale.y = 0.85; pod.add(band);
-    }
-    const fin = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.13, 0.22), A);
-    fin.position.set(0, 0.12, 0.52); fin.rotation.x = 0.35; pod.add(fin);
-    // Kapsülün altındaki namlu (ışın silahı buradan ateşler)
-    const gun = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.028, 0.3, 8), D);
-    gun.rotation.x = Math.PI / 2; gun.position.set(s * 0.02, -0.08, -0.12); pod.add(gun);
-    const fl = addFlame(s * POD, 0.77, 0.085, 0.75);
-    if (fl) for (const o of fl) span.push({ o, x: s * POD });
-    if (ghostMat) continue;
-    // Seyir ışıkları: sağda yeşil, solda kırmızı; kapsül sırtında beyaz
-    const tip = new THREE.Mesh(new THREE.SphereGeometry(0.03, 10, 8), lamp(s > 0 ? 0x37e39a : 0xff4d6a));
-    tip.position.set(s * 0.12, 0, 0.34); pod.add(tip);
-    const top = new THREE.Mesh(new THREE.SphereGeometry(0.02, 8, 6), lamp(0xffffff, 2.5));
-    top.position.set(0, 0.1, 0.62); pod.add(top);
+    // Motor: gövdenin omzuna oturan kalın silindir; önde zırh başlığı, arkada koyu lüle
+    const eng = new THREE.Group(); eng.position.set(s * ENGINE_X, ENGINE_Y, ENGINE_Z); g.add(eng);
+    eng.add(tube(0.055, 0.125, 0.06, 0.24, D, 10), tube(0.125, 0.125, 0.24, 0.4, D, 10), tube(0.115, 0.115, 0.4, 0.7, P, 14));
+    eng.add(tube(0.131, 0.131, 0.44, 0.49, D, 14), tube(0.131, 0.131, 0.59, 0.64, D, 14));
+    eng.add(tube(0.127, 0.105, 0.7, 0.88, P, 14, true));
+    eng.add(box(0.12, 0.04, 0.2, H, 0, 0.112, 0.35), box(0.08, 0.03, 0.1, D, 0, 0.13, 0.54), box(0.035, 0.09, 0.24, D, s * 0.112, 0.01, 0.53));
+    if (detail) eng.add(box(0.012, 0.012, 0.09, A, s * 0.04, 0.134, 0.33), tube(0.127, 0.127, 0.692, 0.706, A, 14, true));
+    addFlame(s * ENGINE_X, ENGINE_Y, 0.88 + ENGINE_Z, 0.1, 0.85);
+    // Motorun dışındaki küçük yatay kuyruk kanadı
+    const tail = slab(wingShape(TAIL, s < 0), 0.022, H, 0.006); tail.position.y += ENGINE_Y; g.add(tail);
+    // Kanat: kök gövde kenarındadır; kanat açıklığı seçimi (shape.wing) grubu x yönünde uzatır.
+    const wing = new THREE.Group(); wing.position.set(s * ROOT, -0.005, 0); g.add(wing); wings.push(wing);
+    wing.add(slab(wingShape(WING, s < 0), 0.034, H, 0.01));
+    const lid = slab(wingShape(WING_PANEL, s < 0), 0.01, D, 0); lid.position.y = 0.024; wing.add(lid);
+    // Uçtaki dik kanatçık
+    const fin = new THREE.Mesh(new THREE.ExtrudeGeometry(wingShape(WINGLET, false), { depth: 0.026, bevelEnabled: true, bevelThickness: 0.006, bevelSize: 0.008, bevelSegments: 1 }), D);
+    fin.rotation.y = -Math.PI / 2; fin.position.set(s * 0.615 + 0.013, 0, 0); fin.rotation.z = 0; wing.add(fin);
+    if (!detail) continue;
+    // Ön kenar boyunca ışık şeridi, üstte kısa ışık çizgisi, kanatçığın dibinde seyir ışığı
+    const [x0, f0] = WING[0], [x1, f1] = WING[1], len = Math.hypot(x1 - x0, f1 - f0), ang = Math.atan2(f1 - f0, x1 - x0);
+    const edge = box(len * 0.94, 0.02, 0.02, A, s * (x0 + x1) / 2, 0, -(f0 + f1) / 2 - 0.012); edge.rotation.y = s * ang; wing.add(edge);
+    const dash = box(0.2, 0.006, 0.022, A, s * 0.33, 0.031, 0.16); dash.rotation.y = s * ang; wing.add(dash);
+    const dash2 = box(0.1, 0.006, 0.018, A, s * 0.47, 0.031, 0.42); wing.add(dash2);
+    const nav = new THREE.Mesh(new THREE.SphereGeometry(0.02, 8, 6), A); nav.position.set(s * 0.615, 0, 0.25); wing.add(nav);
   }
-  Object.assign(g.userData, { flames, wings, span, flameMats, halos, fus, pod: POD });
-  return g;
+  Object.assign(ship.userData, { flames, wings, flameMats, halos, fus });
+  return ship;
 }
 
 /**
- * Hangardaki görünümü gemiye uygular: gövde, şerit ve alev rengi; kapsül açıklığı ve gövde boyu.
+ * Hangardaki görünümü gemiye uygular: gövde, ışık şeridi ve alev rengi; kanat açıklığı ve gövde boyu.
  * Gövde ve şerit malzemeleri ortaktır; hayalet gemi (tek renk) yalnızca biçimi alır.
  */
 export function styleShip(ship, look) {
   const u = ship.userData;
-  if (u.flameMats.length) { hull.color.set(look.hull.color); accent.color.set(look.accent.color); }
+  if (u.flameMats.length) { hull.color.set(look.hull.color); accent.color.copy(bright(look.accent.color, 2.2)); }
   for (const m of u.flameMats) m.color.copy(bright(look.flame.color, 1.6));
   for (const h of u.halos) h.material.color.set(look.flame.color);
-  for (const p of u.span) p.o.position.x = p.x * look.shape.wing;
-  for (const w of u.wings) w.scale.x = u.pod * look.shape.wing - 0.12;
-  u.fus.scale.z = look.shape.nose;
+  for (const w of u.wings) w.scale.x = look.shape.wing;
+  // Gövde burna doğru uzar; kuyruk yerinde kalır.
+  u.fus.scale.z = look.shape.nose; u.fus.position.z = 0.5 * (1 - look.shape.nose);
 }
 
 const pirateHull = new THREE.MeshStandardMaterial({ color: 0x8a1c36, roughness: 0.4, metalness: 0.45, emissive: 0xff2244, emissiveIntensity: 0.3 });

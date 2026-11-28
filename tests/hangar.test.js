@@ -14,17 +14,17 @@ test('hangar: her parçanın ilk seçeneği baştan açık, kimlikler benzersiz'
 });
 
 test('hangar: seçilmemiş ya da henüz açılmamış parça ilk seçeneğe döner', () => {
-  assert.equal(lookOf({}, 0).hull.id, 'kar');
-  assert.equal(lookOf({ hull: 'gece' }, 5).hull.id, 'kar', '6 yıldız gerek');
+  assert.equal(lookOf({}, 0).hull.id, 'celik');
+  assert.equal(lookOf({ hull: 'gece' }, 5).hull.id, 'celik', '6 yıldız gerek');
   assert.equal(lookOf({ hull: 'gece' }, 6).hull.id, 'gece');
-  assert.equal(lookOf({ hull: 'yok', shape: 'ok', seenAt: 3 }, 100).hull.id, 'kar');
+  assert.equal(lookOf({ hull: 'yok', shape: 'ok', seenAt: 3 }, 100).hull.id, 'celik');
   assert.equal(lookOf({ shape: 'ok' }, 100).shape.wing, 0.8);
 });
 
 test('hangar: yıldız artınca açılan parçalar ve sıradaki hedef', () => {
   assert.deepEqual(unlockedBetween(0, 3).map((u) => u.option.id), ['kirmizi']);
   assert.deepEqual(unlockedBetween(3, 3), []);
-  assert.equal(unlockedBetween(0, 500).length, PART_KEYS.reduce((a, k) => a + PARTS[k].options.length - 1, 0));
+  assert.equal(unlockedBetween(0, 500).length, PART_KEYS.reduce((a, k) => a + PARTS[k].options.filter((o) => o.need > 0).length, 0));
   assert.deepEqual([nextUnlock(0).option.id, nextUnlock(0).need], ['kirmizi', 3]);
   assert.equal(nextUnlock(500), null);
 });

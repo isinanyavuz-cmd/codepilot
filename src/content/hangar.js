@@ -6,6 +6,7 @@ export const PARTS = {
   hull: {
     label: 'Gövde',
     options: [
+      { id: 'celik', name: 'Uzay Çeliği', color: '#808a9a', need: 0 },
       { id: 'kar', name: 'Kar Beyazı', color: '#dfe6f3', need: 0 },
       { id: 'gece', name: 'Gece Mavisi', color: '#4a6cf0', need: 6 },
       { id: 'nane', name: 'Nane', color: '#7be0c3', need: 15 },
@@ -16,8 +17,9 @@ export const PARTS = {
     ],
   },
   accent: {
-    label: 'Şerit',
+    label: 'Işık',
     options: [
+      { id: 'buz', name: 'Buz Işığı', color: '#4fb4ff', need: 0 },
       { id: 'turuncu', name: 'Turuncu', color: '#ff6a2b', need: 0 },
       { id: 'kirmizi', name: 'Kırmızı', color: '#ff3b5c', need: 3 },
       { id: 'camgobegi', name: 'Camgöbeği', color: '#2fc8ff', need: 12 },
