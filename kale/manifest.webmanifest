@@ -1,7 +1,7 @@
 {
-  "name": "Canavar Kalesi",
-  "short_name": "Canavar Kalesi",
-  "description": "Canavarlarını programla, kaleni kur, hazineni koru.",
+  "name": "Robot Kalesi",
+  "short_name": "Robot Kalesi",
+  "description": "Robotlarını programla, kaleni kur, hazineni koru.",
   "lang": "tr",
   "start_url": "./",
   "scope": "./",

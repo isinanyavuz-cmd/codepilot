@@ -1,5 +1,6 @@
 // Küçük arayüz yardımcıları: DOM kurma, alttan açılan kart, soru penceresi, kısa bildirim.
 // Tarayıcının kendi alert/prompt pencereleri kullanılmaz: telefonda çirkin durur, oyunu böler.
+import { icon } from './cizim.js';
 
 /** h('button', { class: 'btn', onclick: f }, 'Yazı') → düğüm. `html` yalnız kendi çizimlerimiz içindir. */
 export function h(tag, props, ...kids) {
@@ -16,6 +17,9 @@ export function h(tag, props, ...kids) {
   n.append(...kids.flat().filter((c) => c != null && c !== false));
   return n;
 }
+
+/** İkon düğümü (adlar cizim.js içinde). Düğmelerde yazının önüne konur: h('button', …, ic('play'), 'Oyna'). */
+export const ic = (name) => h('span', { class: 'ic', html: icon(name) });
 
 /** Ekranın altından açılan kart (geniş ekranda ortada). Dışına dokununca kapanır. */
 export function sheet(content, { onClose, locked = false, cls = '' } = {}) {
@@ -72,7 +76,7 @@ export function toast(text) {
 /** Üst çubuk: geri düğmesi, başlık ve sağdaki düğmeler. */
 export function topbar(title, { onBack, right = [] } = {}) {
   return h('header', { class: 'top' },
-    onBack && h('button', { class: 'icon', 'aria-label': 'Geri', text: '‹', onclick: onBack }),
+    onBack && h('button', { class: 'icon', 'aria-label': 'Geri', onclick: onBack }, ic('back')),
     typeof title === 'string' ? h('h1', { class: 'top-title', text: title }) : title,
     h('div', { class: 'top-right' }, right));
 }

@@ -5,7 +5,7 @@ import { parseProg, printProg, countBlocks, GIVES } from './bloklar.js';
 import { LESSONS, runLesson, waveLevel, failText } from './dersler.js';
 import { createBoard } from './tahta.js';
 import { createEditor } from './editor.js';
-import { h, sheet, topbar } from './arayuz.js';
+import { h, ic, sheet, topbar } from './arayuz.js';
 import { sfx, sfxFor } from './ses.js';
 
 const safeParse = (text, fallback) => { try { return parseProg(text ?? fallback); } catch (err) { return parseProg(fallback); } };
@@ -22,11 +22,12 @@ export function lessonScreen(ctx, lesson) {
   const board = createBoard({ onCell });
   const stage = h('div', { class: 'stage' }, msg, h('div', { class: 'boardbox' }, board.el));
   const runBtn = h('button', { class: 'btn go run', onclick: toggle });
-  const stepBtn = h('button', { class: 'btn', text: 'Adım', onclick: stepOnce });
-  const resetBtn = h('button', { class: 'btn', text: '↺', 'aria-label': 'Baştan', onclick: reset });
+  const stepBtn = h('button', { class: 'btn', 'aria-label': 'Adım', onclick: stepOnce }, ic('step'), h('span', { class: 'lbl', text: 'Adım' }));
+  const resetBtn = h('button', { class: 'btn', 'aria-label': 'Baştan', onclick: reset }, ic('reset'));
   const speedBtn = h('button', { class: 'btn', text: '1×', 'aria-label': 'Hız', onclick: () => { fast = !fast; speedBtn.textContent = fast ? '2×' : '1×'; } });
   const waves = h('div', { class: 'waves' });
-  const runbar = h('div', { class: 'runbar' }, resetBtn, runBtn, stepBtn, speedBtn, waves);
+  // Deneme düğmeleri de sığsın diye çok denemeli derslerde "Adım" yalnız ikonuyla durur.
+  const runbar = h('div', { class: `runbar ${lesson.waves.length > 1 && !predict ? 'many' : ''}` }, resetBtn, runBtn, stepBtn, speedBtn, waves);
   const tabs = h('div', { class: 'tabs' });
   const editor = createEditor({ onChange });
   const panel = h('div', { class: 'panel' }, runbar, tabs, editor.el);
@@ -62,7 +63,7 @@ export function lessonScreen(ctx, lesson) {
   }
 
   function buttons() {
-    runBtn.textContent = predict ? 'Bu kare!' : playing ? 'Dur' : 'Başlat';
+    runBtn.replaceChildren(...(predict ? [ic('check'), 'Bu kare!'] : playing ? [ic('stop'), 'Dur'] : [ic('play'), 'Başlat']));
     runBtn.disabled = predict && (!guess || playing);
     stepBtn.hidden = speedBtn.hidden = predict;
     resetBtn.hidden = predict && !run;
@@ -142,7 +143,7 @@ export function lessonScreen(ctx, lesson) {
       board.mark(end.x, end.y, ok ? 'right' : 'wrong');
       if (ok) return win();
       tries++; guess = null; sfx('fail');
-      setMsg('Tutmadı: canavar işaretli karede durdu. ↺ ile yeni bir başlangıç gelir; bir daha tahmin et.', 'bad');
+      setMsg('Tutmadı: robot işaretli karede durdu. ↺ ile yeni bir başlangıç gelir; bir daha tahmin et.', 'bad');
       buttons();
       return;
     }

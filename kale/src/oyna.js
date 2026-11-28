@@ -1,11 +1,11 @@
 // Oynama ekranı: şövalyeyi oyuncu yürütür. Her hamleden sonra kaledeki her şey programından bir
-// hareket yapar. Bir canavara, kapıya ya da dikene dokununca programı okunur: kaleyi yenmenin
+// hareket yapar. Bir robota, kapıya ya da dikene dokununca programı okunur: kaleyi yenmenin
 // yolu, onu kuranın yazdığı kodu okumaktır.
 import { buildLevel, initState, step } from './motor.js';
 import { KIND_NAMES } from './bloklar.js';
 import { createBoard } from './tahta.js';
 import { createEditor } from './editor.js';
-import { h, sheet, topbar } from './arayuz.js';
+import { h, ic, sheet, topbar } from './arayuz.js';
 import { sfx, sfxFor } from './ses.js';
 
 const KEYS = { ArrowUp: 'U', ArrowRight: 'R', ArrowDown: 'D', ArrowLeft: 'L', w: 'U', d: 'R', s: 'D', a: 'L', ' ': '.' };
@@ -22,11 +22,11 @@ export function playScreen(ctx, { castle, source, back, sampleIndex }) {
   const board = createBoard({ onCell });
   const stage = h('div', { class: 'stage' }, msg, h('div', { class: 'boardbox' }, board.el));
   const stats = h('span', { class: 'stats' });
-  const key = (m, label, name) => h('button', { class: `btn key k${m === '.' ? 'w' : m}`, 'aria-label': name, text: label, onclick: () => move(m) });
-  const pad = h('div', { class: 'dpad' }, key('U', '▲', 'Yukarı'), key('L', '◀', 'Sol'), key('.', 'bekle', 'Bekle'), key('R', '▶', 'Sağ'), key('D', '▼', 'Aşağı'));
+  const key = (m, face, name) => h('button', { class: `btn key k${m === '.' ? 'w' : m}`, 'aria-label': name, onclick: () => move(m) }, m === '.' ? face : ic(face));
+  const pad = h('div', { class: 'dpad' }, key('U', 'arrowU', 'Yukarı'), key('L', 'arrowL', 'Sol'), key('.', 'bekle', 'Bekle'), key('R', 'arrowR', 'Sağ'), key('D', 'arrowD', 'Aşağı'));
   const panel = h('div', { class: 'panel play' }, pad);
   const el = h('div', { class: 'screen' },
-    topbar(castle.name, { onBack: () => ctx.back(back), right: [stats, h('button', { class: 'btn small', text: '↺ Baştan', onclick: restart })] }),
+    topbar(castle.name, { onBack: () => ctx.back(back), right: [stats, h('button', { class: 'btn small', onclick: restart }, ic('reset'), 'Baştan')] }),
     h('div', { class: 'game' }, stage, panel));
 
   function draw(fx = [], snap = false) {
@@ -37,7 +37,7 @@ export function playScreen(ctx, { castle, source, back, sampleIndex }) {
   function restart() {
     clearTimeout(resultTimer);
     state = initState(level); busy = false; queued = null;
-    msg.className = 'msg'; msg.textContent = 'Hazineye ulaş! Bir canavara dokunursan programını okursun.';
+    msg.className = 'msg'; msg.textContent = 'Hazineye ulaş! Bir robota dokunursan programını okursun.';
     board.setLevel(level);
     draw([], true);
     fit();
@@ -64,7 +64,7 @@ export function playScreen(ctx, { castle, source, back, sampleIndex }) {
     if (!won) {
       const s = sheet([
         h('div', { class: 'sheet-title big', text: 'Yakalandın!' }),
-        h('p', { class: 'sheet-text', text: 'Canavarların programını oku, zamanını kolla.' }),
+        h('p', { class: 'sheet-text', text: 'Robotların programını oku, zamanını kolla.' }),
         h('div', { class: 'row' }, h('button', { class: 'btn go', text: 'Tekrar dene', onclick: () => { s.close(); restart(); } })),
       ], { cls: 'result' });
       return;

@@ -3,36 +3,36 @@
 // Program bir "şapka" listesidir. Her şapka bir olayı ve o olay olunca çalışacak blokları tutar:
 //   [{ t: 'on', e: 'start', b: [{ t: 'forever', b: [{ t: 'fwd' }, …] }] }, { t: 'on', e: 'coin', b: […] }]
 // Kısa yazım aynı şeyi tek satırda söyler; kayıtta, paylaşım bağlantısında ve derslerde bu kullanılır:
-//   '@s(F(ffrr))@c(b)'  →  başlayınca: sürekli { ileri, ileri, sağ, sağ } · altın alınınca: kükre
+//   '@s(F(ffrr))@c(b)'  →  başlayınca: sürekli { ileri, ileri, sağ, sağ } · altın alınınca: korna çal
 //   'R4(ffr)'           →  yalnız "başlayınca" şapkası varsa şapka yazılmaz
 
 let counter = 0;
 /** Blok kimliği: editörde seçim ve çalışırken vurgulama için. Kayda yazılmaz. */
 export const uid = () => `b${(++counter).toString(36)}`;
 
-const ACT = { f: 'fwd', l: 'left', r: 'right', d: 'dash', w: 'wait', b: 'roar', a: 'alarm', o: 'open', c: 'close', u: 'up', n: 'down' };
+const ACT = { f: 'fwd', l: 'left', r: 'right', d: 'dash', w: 'wait', b: 'honk', a: 'alarm', o: 'open', c: 'close', u: 'up', n: 'down' };
 const EVT = { s: 'start', e: 'see', c: 'coin', k: 'key', p: 'plate', a: 'alarm' };
 const CND = { w: 'wall', e: 'see' };
 const flip = (o) => Object.fromEntries(Object.entries(o).map(([k, v]) => [v, k]));
 const ACT_CH = flip(ACT), EVT_CH = flip(EVT), CND_CH = flip(CND);
 
-/** Blokların görünen adları. `body`: içine blok alır. */
+/** Blokların görünen adları. `icon`: cizim.js içindeki ikonun adı. `body`: içine blok alır. */
 export const BLOCKS = {
-  fwd: { label: 'ileri git', icon: '↑', cls: 'b-move' },
-  left: { label: 'sola dön', icon: '↶', cls: 'b-move' },
-  right: { label: 'sağa dön', icon: '↷', cls: 'b-move' },
-  dash: { label: 'koş', icon: '⇈', cls: 'b-move' },
-  wait: { label: 'bekle', icon: '⋯', cls: 'b-calm' },
-  roar: { label: 'kükre', icon: '!', cls: 'b-loud' },
-  alarm: { label: 'alarm çal', icon: '♪', cls: 'b-loud' },
-  open: { label: 'açıl', icon: '◧', cls: 'b-gear' },
-  close: { label: 'kapan', icon: '■', cls: 'b-gear' },
-  up: { label: 'dikenleri çıkar', icon: '▲', cls: 'b-gear' },
-  down: { label: 'dikenleri indir', icon: '▽', cls: 'b-gear' },
-  repeat: { label: 'kez tekrarla', icon: '⟳', cls: 'b-loop', body: true },
-  forever: { label: 'sürekli tekrarla', icon: '∞', cls: 'b-loop', body: true },
-  if: { label: 'eğer', icon: '?', cls: 'b-logic', body: true },
-  on: { label: 'olunca', icon: '⚡', cls: 'b-event', body: true },
+  fwd: { label: 'ileri git', icon: 'fwd', cls: 'b-move' },
+  left: { label: 'sola dön', icon: 'turnL', cls: 'b-move' },
+  right: { label: 'sağa dön', icon: 'turnR', cls: 'b-move' },
+  dash: { label: 'koş', icon: 'dash', cls: 'b-move' },
+  wait: { label: 'bekle', icon: 'wait', cls: 'b-calm' },
+  honk: { label: 'korna çal', icon: 'honk', cls: 'b-loud' },
+  alarm: { label: 'alarm çal', icon: 'alarm', cls: 'b-loud' },
+  open: { label: 'açıl', icon: 'open', cls: 'b-gear' },
+  close: { label: 'kapan', icon: 'close', cls: 'b-gear' },
+  up: { label: 'dikenleri çıkar', icon: 'spikesUp', cls: 'b-gear' },
+  down: { label: 'dikenleri indir', icon: 'spikesDown', cls: 'b-gear' },
+  repeat: { label: 'kez tekrarla', icon: 'repeat', cls: 'b-loop', body: true },
+  forever: { label: 'sürekli tekrarla', icon: 'forever', cls: 'b-loop', body: true },
+  if: { label: 'eğer', icon: 'ask', cls: 'b-logic', body: true },
+  on: { label: 'olunca', icon: 'bolt', cls: 'b-event', body: true },
 };
 export const CONDS = { wall: 'önüm kapalıysa', see: 'şövalyeyi görüyorsam' };
 export const EVENTS = {
@@ -40,18 +40,18 @@ export const EVENTS = {
   key: 'anahtar alınınca', plate: 'düğmeye basılınca', alarm: 'alarm çalınca',
 };
 
-/** Hangi tür neyi yapabilir. Kapı yürüyemez, canavar açılıp kapanamaz. */
+/** Hangi tür neyi yapabilir. Kapı yürüyemez, robot açılıp kapanamaz. */
 export const KIND_BLOCKS = {
-  monster: ['fwd', 'left', 'right', 'dash', 'wait', 'roar', 'alarm', 'repeat', 'forever', 'if', 'on'],
+  guard: ['fwd', 'left', 'right', 'dash', 'wait', 'honk', 'alarm', 'repeat', 'forever', 'if', 'on'],
   door: ['open', 'close', 'wait', 'repeat', 'forever', 'on'],
   spikes: ['up', 'down', 'wait', 'repeat', 'forever', 'on'],
 };
 export const KIND_EVENTS = {
-  monster: ['start', 'see', 'coin', 'key', 'plate', 'alarm'],
+  guard: ['start', 'see', 'coin', 'key', 'plate', 'alarm'],
   door: ['start', 'coin', 'key', 'plate', 'alarm'],
   spikes: ['start', 'coin', 'key', 'plate', 'alarm'],
 };
-export const KIND_NAMES = { monster: 'Canavar', door: 'Kapı', spikes: 'Diken' };
+export const KIND_NAMES = { guard: 'Robot', door: 'Kapı', spikes: 'Diken' };
 
 const MAX_DEPTH = 6, MAX_NODES = 150;
 
@@ -151,27 +151,6 @@ export function makeBlock(t, extra = {}) {
 
 const seqOf = (prog, cur) => { const hit = findNode(prog, cur.owner); return hit ? hit.node[cur.br] : null; };
 
-/**
- * Blok konabilecek bütün yerler, yukarıdan aşağı okuma sırasıyla: { owner, br, i }.
- * Bir bloğu "aşağı taşı" demek, onu çıkarıp bu listede bir sonraki yere koymaktır; böylece
- * sürüklemeden döngünün içine girer, sonundan dışarı çıkar.
- */
-export function cursors(prog) {
-  const out = [];
-  const visit = (seq, owner, br) => {
-    for (let i = 0; i <= seq.length; i++) {
-      out.push({ owner: owner.id, br, i });
-      const n = seq[i];
-      if (n && n.b) visit(n.b, n, 'b');
-      if (n && n.o) visit(n.o, n, 'o');
-    }
-  };
-  for (const hat of prog) visit(hat.b, hat, 'b');
-  return out;
-}
-
-export const sameCursor = (a, b) => !!a && !!b && a.owner === b.owner && a.br === b.br && a.i === b.i;
-
 /** Bloğu imlecin gösterdiği yere koyar (programı yerinde değiştirir). */
 export function insertAt(prog, cur, node) {
   const seq = seqOf(prog, cur);
@@ -188,15 +167,23 @@ export function removeNode(prog, id) {
   return hit.owner ? { owner: hit.owner.id, br: hit.br, i: hit.index } : null;
 }
 
-/** Bloğu okuma sırasında bir yer yukarı (-1) ya da aşağı (+1) taşır. Taşınamıyorsa false. */
-export function moveNode(prog, id, dir) {
+/**
+ * Bloğu, içindekilerle birlikte, imlecin gösterdiği yere taşır (sürükle-bırak). İmleç, blok
+ * yerinden çıkarılmadan önceki sıraya göre verilir. Blok kendi içine taşınamaz; yeri değişmediyse false.
+ */
+export function moveTo(prog, id, cur) {
   const hit = findNode(prog, id);
   if (!hit || hit.node.t === 'on') return false;
-  const from = { owner: hit.owner.id, br: hit.br, i: hit.index };
+  let inside = false;
+  walk([hit.node], (n) => { if (n.id === cur.owner) inside = true; });
+  const target = inside ? null : seqOf(prog, cur);
+  if (!target) return false;
+  let i = Math.max(0, Math.min(cur.i, target.length));
+  if (target === hit.seq && i > hit.index) i--;        // aynı dizide aşağı inerken çıkardığımız blok sırayı bir kaydırır
+  if (target === hit.seq && i === hit.index) return false;
   hit.seq.splice(hit.index, 1);
-  const list = cursors(prog), at = list.findIndex((c) => sameCursor(c, from)), to = list[at + dir];
-  insertAt(prog, to || from, hit.node);
-  return !!to;
+  target.splice(i, 0, hit.node);
+  return true;
 }
 
 /** Türüne uymayan ya da tanınmayan blok var mı? (Bağlantıdan gelen programı süzmek için.) */
@@ -216,13 +203,13 @@ export function progFits(prog, kind) {
  * Kapının ve dikenin kendi blokları (açıl, kapan, çıkar, indir) parça açılınca gelir.
  */
 export const GIVES = {
-  3: { tag: 'atölye', title: 'Atölye açıldı!', text: 'Artık kendi kaleni kurabilirsin.', pieces: ['wall', 'knight', 'chest', 'monster'], blocks: ['fwd', 'left', 'right', 'wait', 'roar'] },
-  4: { tag: 'tekrarla', title: 'Yeni blok: tekrarla', text: 'Atölyede canavarların artık döngü kurabilir.', blocks: ['repeat'] },
+  3: { tag: 'atölye', title: 'Atölye açıldı!', text: 'Artık kendi kaleni kurabilirsin.', pieces: ['wall', 'knight', 'chest', 'guard'], blocks: ['fwd', 'left', 'right', 'wait', 'honk'] },
+  4: { tag: 'tekrarla', title: 'Yeni blok: tekrarla', text: 'Atölyede robotların artık döngü kurabilir.', blocks: ['repeat'] },
   5: { tag: 'altın', title: 'Yeni parça: altın', text: 'Kalene altın serpiştirebilirsin.', pieces: ['coin'] },
   6: { tag: 'sürekli tekrarla, diken', title: 'Yeni blok: sürekli tekrarla', text: 'Yeni parça da var: inip çıkan dikenler.', blocks: ['forever'], pieces: ['spikes'] },
   7: { tag: 'kapı', title: 'Yeni parça: kapı', text: 'Kapıya da program yazılır: ne zaman açılsın, ne zaman kapansın?', pieces: ['door'] },
-  8: { tag: 'eğer / değilse', title: 'Yeni blok: eğer / değilse', text: 'Canavarların artık önüne bakıp karar verebilir.', blocks: ['if'], conds: ['wall'] },
-  9: { tag: 'koş, görüş', title: 'Yeni bloklar: koş ve "görüyorsam"', text: 'Canavarların şövalyeyi görünce koşabilir.', blocks: ['dash'], conds: ['see'] },
+  8: { tag: 'eğer / değilse', title: 'Yeni blok: eğer / değilse', text: 'Robotların artık önüne bakıp karar verebilir.', blocks: ['if'], conds: ['wall'] },
+  9: { tag: 'koş, görüş', title: 'Yeni bloklar: koş ve "görüyorsam"', text: 'Robotların şövalyeyi görünce koşabilir.', blocks: ['dash'], conds: ['see'] },
   10: { tag: 'olaylar, anahtar, düğme', title: 'Yeni blok: olunca', text: 'Yeni parçalar: anahtar ve düğme. Bir şey olunca ne olacağını sen yaz.', blocks: ['on'], events: ['coin', 'key', 'plate', 'see'], pieces: ['key', 'plate'] },
   11: { tag: 'alarm', title: 'Yeni blok: alarm çal', text: 'Kalendeki her şey artık birbirine haber verebilir.', blocks: ['alarm'], events: ['alarm'] },
 };
@@ -235,7 +222,7 @@ export function unlocks(done) {
     if (done !== 'all' && !done.includes(Number(id))) continue;
     for (const k of ['pieces', 'blocks', 'conds', 'events']) for (const v of g[k] || []) out[k].add(v);
   }
-  out.workshop = out.pieces.has('monster');
+  out.workshop = out.pieces.has('guard');
   return out;
 }
 

@@ -1,10 +1,10 @@
-# Canavar Kalesi
+# Robot Kalesi
 
 Çocuklar için blok kodlama oyunu (9 yaş ve çevresi). Kod Pilotu'ndan bağımsız, sıfırdan tasarlandı;
 aynı depoda `kale/` klasöründe durur ve onun hiçbir dosyasını kullanmaz.
 
 Fikir: çocuk bulmaca çözmekle kalmaz, **kendi oyununu kurar**. Bir kale çizer; içine koyduğu her
-canavara, kapıya ve dikene program yazar. Sonra telefonu babasına verir (ya da bağlantı gönderir):
+robota, kapıya ve dikene program yazar. Sonra telefonu babasına verir (ya da bağlantı gönderir):
 baba şövalyeyle hazineye ulaşmaya çalışır. Kaleyi yenmenin yolu, çocuğun yazdığı programı okumaktır.
 
 Yayındaki adres: `https://isinanyavuz-cmd.github.io/codepilot/kale/`
@@ -14,19 +14,19 @@ Yayındaki adres: `https://isinanyavuz-cmd.github.io/codepilot/kale/`
 Oyun **tur tur** ilerler: önce şövalye bir hamle yapar, sonra kaledeki programlı her şey programından
 **tek bir hareket** yapar. Refleks gerekmez; düşünmek ve zamanlamak gerekir.
 
-- **Canavar Okulu**: on bir kısa ders. Her ders tek bir fikir öğretir ve atölyeye yeni bir blok ya da
+- **Robot Okulu**: on bir kısa ders. Her ders tek bir fikir öğretir ve atölyeye yeni bir blok ya da
   parça açar. Yıldız ve puan yoktur; ödül, atölyede kullanılacak yeni şeydir.
 - **Atölye** (3. dersten sonra açılır): kareleri doldur, parçalara program yaz, «Oyna» ile kendin
   bitir. Kendi bitirdiğin kale **kanıtlanmış** olur ve paylaşılabilir; böylece çözülemeyen kale
   gönderilemez. Örnek kaleler önce oynanır, sonra kopyalanıp değiştirilir.
-- **Usta işi**: atölyenin uzun soluklu hedefi (döngülü bir canavar, olaya bağlı bir parça, bitirilmiş
+- **Usta işi**: atölyenin uzun soluklu hedefi (döngülü bir robot, olaya bağlı bir parça, bitirilmiş
   ve birine oynatılmış bir kale). Bulmaca çözerek değil, kale kurarak tamamlanır.
 
 | Ders | Fikir | Atölyeye açtığı |
 |---|---|---|
 | 1 İlk Adım | bloklar sırayla çalışır | |
 | 2 Köşe | dönmek yürümek değildir | |
-| 3 Yanlış Dönüş | hata bulup düzeltmek | atölye, canavar, duvar |
+| 3 Yanlış Dönüş | hata bulup düzeltmek | atölye, robot, duvar |
 | 4 Uzun Koridor | tekrarla | tekrarla |
 | 5 Kare Tur | döngünün içinde birden çok blok | altın |
 | 6 Nöbet | sürekli tekrarla | sürekli tekrarla, diken |
@@ -41,19 +41,37 @@ yoldan ya da başka zamanda gelir. Yolu ezberleyen ya da turları sayan program 
 
 ### Bloklar
 
-- **Canavar**: ileri git, sola dön, sağa dön, koş (bir turda iki kare), bekle, kükre, alarm çal.
+- **Robot**: ileri git, sola dön, sağa dön, koş (bir turda iki kare), bekle, korna çal, alarm çal.
 - **Kapı**: açıl, kapan, bekle. **Diken**: dikenleri çıkar, dikenleri indir, bekle.
 - **Hepsi**: tekrarla, sürekli tekrarla, «olunca» (oyun başlayınca, altın alınınca, anahtar alınınca,
-  düğmeye basılınca, alarm çalınca; canavarda ayrıca şövalyeyi görünce).
-- **Yalnız canavar**: eğer / değilse (önüm kapalıysa, şövalyeyi görüyorsam).
+  düğmeye basılınca, alarm çalınca; robotta ayrıca şövalyeyi görünce).
+- **Yalnız robot**: eğer / değilse (önüm kapalıysa, şövalyeyi görüyorsam).
 
 Kapının anahtarla açılması gibi kurallar oyuna gömülü değildir: çocuk yazar ("anahtar alınınca: açıl").
 
+### Dönüşler neden "sola / sağa"?
+
+Robot **kendi** soluna ve sağına döner; ekranın soluna ve sağına değil. Aşağı bakan robotun solu ekranın
+sağıdır ve çocukların en sık yaptığı hata budur (3. ders bu hatayı bulup düzeltme dersidir). Yine de
+"yukarı / aşağı / sola / sağa git" blokları yerine bu seçildi, çünkü programlamanın asıl fikirleri ona
+dayanır: "4 kez: iki ileri, sağa dön" yalnız dönüş robota göreyse kare çizer; "önüm kapalıysa" ve
+"şövalyeyi görüyorsam" da robotun baktığı yöne göredir. Aynı program, robot nereye bakarak konursa
+konsun çalışır.
+
+Ekranda okunması için iki şey yapıldı: robot tepeden görünür ve önü bellidir (gözler, kollar, sarı
+ışık); dönüş bloklarının ikonu ekranda görülen dönüşün kendisidir (sola dön: saatin tersine, sağa dön:
+saat yönünde) ve robot nereye bakarsa baksın doğrudur.
+
 ### Telefonda
 
-Blok editörü sürüklemesiz çalışır: paletteki bloğa dokununca sarı çizginin olduğu yere eklenir;
-programdaki bloğa dokununca seçilir ve ↑ ↓ ile taşınır (döngünün içine girer, sonundan çıkar) ya da
-silinir. Dikeyde tahta üstte, program altta; yatayda ve geniş ekranda yan yana durur.
+Bloklar sürüklenip bırakılır: paletteki blok programa sürüklenir, bırakılacağı yeri sarı çizgi
+gösterir; programdaki blok içindekilerle birlikte başka yere (döngünün içine, dışına, başka olaya)
+taşınır. Bloğu aşağıya, palete bırakmak onu siler. Bloğa dokununca üstünde ✕ çıkar; o da siler.
+Yalnızca dokunmak da olur: paletteki blok yanıp sönen sarı çizginin durduğu yere eklenir. «Geri al»
+son altmış değişikliği geri getirir. Program alanı, blokların yanındaki boşluktan kaydırılır;
+sürüklerken alanın kenarına gelince kendiliğinden kayar.
+
+Dikeyde tahta üstte, program altta; yatayda ve geniş ekranda yan yana durur.
 
 ## Çalıştırmak
 
@@ -75,8 +93,8 @@ Testler depo kökündeki `npm test` ile çalışır (`tests/kale.test.js`).
 | `src/bloklar.js` | Blok kataloğu, program ağacı, kısa yazım (`'F(ffrr)'`), derslerle açılanlar |
 | `src/dersler.js` | On bir ders, ders çalıştırıcı, olmayınca söylenen cümleler |
 | `src/kaleler.js` | Atölye kaleleri: kareye parça koyma, denetleme, bağlantıya çevirme, örnekler |
-| `src/tahta.js`, `src/cizim.js` | Tahtanın çizimi (DOM ve elle yazılmış SVG) |
-| `src/editor.js` | Blok editörü |
+| `src/tahta.js`, `src/cizim.js` | Tahtanın çizimi (DOM ve elle yazılmış SVG); düğme ve blok ikonları |
+| `src/editor.js` | Blok editörü: sürükle-bırak, seçim, silme, geri alma |
 | `src/ders.js`, `src/atolye.js`, `src/oyna.js` | Ders, atölye ve oynama ekranları |
 | `src/uygulama.js` | Giriş, ana ekran, ekranlar arası gezinme |
 | `src/kayit.js`, `src/ses.js`, `src/arayuz.js` | Kayıt, ses efektleri, küçük arayüz yardımcıları |
@@ -101,18 +119,23 @@ Testlerin denetledikleri, kural olarak:
 {
   id: 4, title: 'Uzun Koridor', type: 'yaz',
   text: 'Çantan yalnız 2 blok alıyor. «tekrarla» ile bayrağa var.',
-  waves: [{ rows: ['#######', '......F', '#######'], ents: [{ kind: 'monster', x: 0, y: 1, dir: 1 }] }],
+  waves: [{ rows: ['#######', '......F', '#######'], ents: [{ kind: 'guard', x: 0, y: 1, dir: 1 }] }],
   parts: [{ start: '', cap: 2, tools: { blocks: ['fwd', 'repeat'] } }],
   goal: { type: 'flags' }, solution: ['R6(f)'],
   hints: ['…', '…'],
 }
 ```
 
-Kısa yazım: `f` ileri, `l` sola dön, `r` sağa dön, `d` koş, `w` bekle, `b` kükre, `a` alarm çal,
+Kısa yazım: `f` ileri, `l` sola dön, `r` sağa dön, `d` koş, `w` bekle, `b` korna çal, `a` alarm çal,
 `o` açıl, `c` kapan, `u` dikenleri çıkar, `n` dikenleri indir; `R4(…)` tekrarla, `F(…)` sürekli
 tekrarla, `Iw(…)(…)` eğer önüm kapalıysa / değilse, `Ie(…)(…)` eğer şövalyeyi görüyorsam;
 `@s(…)` başlayınca, `@e` görünce, `@c` altın, `@k` anahtar, `@p` düğme, `@a` alarm.
 Derse bir şey açtırmak için `src/bloklar.js` içindeki `GIVES` tablosuna satır eklenir.
+
+Kodda programlanan yürüyen parçanın adı `guard`'dır (bekçi); ekranda "robot" olarak görünür. Karakter
+değişecekse `src/cizim.js` içindeki `guard()` çizimi ve metinlerdeki "robot" sözü değişir; kurallar
+aynı kalır. İlk sürümde bu parça canavardı: eski kayıtlar (`monster`) ve eski bağlantılar (`m`)
+`src/kaleler.js` içinde robota çevrilerek açılır.
 
 ## Bilinen eksikler
 

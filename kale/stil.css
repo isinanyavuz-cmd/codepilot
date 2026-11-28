@@ -1,4 +1,4 @@
-/* Canavar Kalesi. Telefon önceliklidir: dikeyde tahta üstte, program altta; geniş ekranda yan yana. */
+/* Robot Kalesi. Telefon önceliklidir: dikeyde tahta üstte, program altta; geniş ekranda yan yana. */
 :root {
   --bg: #1b1830; --panel: #272345; --panel2: #38335f; --well: #1e1b36; --line: #4b4578;
   --ink: #f4f1ff; --dim: #aaa4d3; --gold: #ffc94d; --ok: #5fd68b; --green: #2c9f61; --red: #b9404a;
@@ -7,7 +7,7 @@
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 [hidden] { display: none !important; }
 html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); overscroll-behavior: none; }
-body { font: 16px/1.3 ui-rounded, "Nunito", "Segoe UI", system-ui, -apple-system, sans-serif; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+body { font: 16px/1.3 ui-rounded, "Nunito", "Segoe UI", system-ui, -apple-system, sans-serif; touch-action: manipulation; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 button { font: inherit; color: inherit; cursor: pointer; }
 button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 #app { height: 100vh; height: 100dvh; display: flex; flex-direction: column; max-width: 1180px; margin: 0 auto; }
@@ -16,11 +16,17 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outl
 
 /* ── üst çubuk, düğmeler ── */
 .top { flex: none; min-height: 52px; display: flex; align-items: center; gap: 6px; padding: env(safe-area-inset-top) 8px 0; }
-.icon { width: 44px; height: 44px; border: 0; border-radius: 12px; background: none; font-size: 32px; line-height: 1; padding: 0 0 4px; }
+.icon { width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: 12px; background: none; padding: 0; }
+.icon .ic { width: 28px; height: 28px; }
 .top-title { flex: 1; min-width: 0; margin: 0; font-size: 18px; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
-button.top-title { border: 0; background: none; min-height: 44px; padding: 0 4px; }
+button.top-title { display: flex; align-items: center; gap: 6px; border: 0; background: none; min-height: 44px; padding: 0 4px; }
+.name-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+button.top-title .ic { width: 18px; height: 18px; color: var(--dim); }
 .top-right { display: flex; gap: 6px; flex: none; }
-.btn { border: 0; border-radius: 12px; background: var(--panel2); font-weight: 800; min-height: 44px; padding: 0 14px; box-shadow: 0 3px 0 #0006; white-space: nowrap; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 0; border-radius: 12px; background: var(--panel2); font-weight: 800; min-height: 44px; padding: 0 14px; box-shadow: 0 3px 0 #0006; white-space: nowrap; }
+/* İkon: kalın çizgili SVG (cizim.js). Boyunu içinde durduğu yazıdan alır. */
+.ic { flex: none; display: inline-grid; place-items: center; width: 1.25em; height: 1.25em; }
+.ic svg { display: block; width: 100%; height: 100%; }
 .btn:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 #0006; }
 .btn.small { min-height: 38px; padding: 0 10px; font-size: 14px; border-radius: 10px; }
 .btn.go { background: var(--green); }
@@ -71,10 +77,10 @@ button.top-title { border: 0; background: none; min-height: 44px; padding: 0 4px
 .ent.knight { z-index: 4; }
 .hop, .spr { width: 100%; height: 100%; }
 .spr { padding: 5%; }
-.monster .spr { transform: rotate(calc(var(--r, 0) * 90deg)); transition: transform .22s; }
+.guard .spr { transform: rotate(calc(var(--r, 0) * 90deg)); transition: transform .22s; }
 .board.snap .ent, .board.snap .spr, .board.snap svg, .board.snap svg * { transition: none !important; }
 .ent.bump .hop { animation: bump .28s; }
-.ent.roar .hop { animation: roar .42s; }
+.ent.honk .hop { animation: honk .42s; }
 .knight.gone .hop { animation: poof .5s forwards; }
 .knight.won .hop { animation: jump .45s 2; }
 .door .leaf { transform-box: fill-box; transform-origin: left center; transition: transform .22s; }
@@ -96,7 +102,7 @@ button.top-title { border: 0; background: none; min-height: 44px; padding: 0 4px
 @keyframes bob { 50% { transform: translateY(-8%); } }
 @keyframes pop { 50% { transform: scale(1.3); } }
 @keyframes bump { 40% { transform: translate(calc(var(--bx) * 24%), calc(var(--by) * 24%)); } }
-@keyframes roar { 40% { transform: scale(1.32); } }
+@keyframes honk { 40% { transform: scale(1.32); } }
 @keyframes poof { to { transform: rotate(220deg) scale(0); opacity: 0; } }
 @keyframes jump { 50% { transform: translateY(-26%); } }
 @keyframes bub { 0% { transform: translate(-50%, 40%) scale(.4); opacity: 0; } 18% { transform: translate(-50%, 0) scale(1.08); opacity: 1; } 75% { transform: translate(-50%, -10%); opacity: 1; } 100% { transform: translate(-50%, -40%); opacity: 0; } }
@@ -105,6 +111,8 @@ button.top-title { border: 0; background: none; min-height: 44px; padding: 0 4px
 /* ── çalıştırma çubuğu, sekmeler ── */
 .runbar { flex: none; display: flex; align-items: center; gap: 6px; }
 .runbar .btn { padding: 0 10px; }
+.runbar .btn .ic { width: 22px; height: 22px; }
+.runbar.many .lbl { display: none; }
 .runbar .run { flex: 1; min-width: 0; font-size: 17px; }
 .waves { flex: none; display: flex; gap: 4px; }
 .wave { width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--line); background: none; color: var(--dim); font-weight: 800; padding: 0; }
@@ -119,9 +127,9 @@ button.top-title { border: 0; background: none; min-height: 44px; padding: 0 4px
 
 /* ── blok editörü ── */
 .ed { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 6px; }
-.ed-prog { flex: 1; min-height: 60px; overflow-y: auto; background: var(--well); border-radius: 12px; padding: 6px; }
+.ed-prog { position: relative; flex: 1; min-height: 60px; overflow-y: auto; background: var(--well); border-radius: 12px; padding: 6px; }
 .ed-bar { flex: none; display: flex; align-items: center; gap: 6px; }
-.ed-pal { flex: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(50px, 1fr)); gap: 6px; }
+.ed-pal { position: relative; flex: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(50px, 1fr)); gap: 6px; }
 .ed.ro .ed-bar, .ed.ro .ed-pal { display: none; }
 .hat { margin-bottom: 8px; border-radius: 12px; background: #2c2850; padding-bottom: 4px; }
 .hat:last-child { margin-bottom: 0; }
@@ -136,24 +144,43 @@ button.top-title { border: 0; background: none; min-height: 44px; padding: 0 4px
 /* Blok renkleri. Adlar "b-" ile başlar: tahtadaki .thing ve konuşma balonu sınıflarıyla karışmasın. */
 .b-move { background: var(--move); } .b-calm { background: var(--calm); } .b-loud { background: var(--loud); } .b-gear { background: var(--thing); }
 .b-loop { background: var(--loop); } .b-logic { background: var(--logic); } .b-event { background: var(--event); }
-.ic { flex: none; width: 20px; text-align: center; font-size: 17px; font-weight: 900; }
+.blk .ic, .hat-head .ic { width: 22px; height: 22px; }
 .pill { border: 0; border-radius: 999px; background: #fff; color: #221c3a; font-weight: 800; font-size: 14.5px; min-width: 34px; min-height: 28px; padding: 2px 10px; }
 .pill:disabled { opacity: 1; cursor: default; }
 .hat.sel > .hat-head, .blk.sel { outline: 3px solid #fff; outline-offset: 1px; }
 .hat.run > .hat-head, .blk.leaf.run, .blk.box.run > .blk-head { box-shadow: 0 0 0 3px var(--gold), 0 0 14px var(--gold); border-radius: 10px; }
+/* Seçili bloğun üstündeki ✕. Bloğun boyunu değiştirmesin diye kenar boşluğu eksi verilir. */
+.del { flex: none; display: grid; place-items: center; width: 34px; height: 34px; margin: -6px -7px -6px auto; padding: 0; border: 2px solid #fff; border-radius: 50%; background: #e5484d; color: #fff; box-shadow: 0 2px 0 #0006; cursor: pointer; }
+.del .ic { width: 18px; height: 18px; }
+.del svg { stroke-width: 4.4; }
+.del:active { transform: scale(.9); }
 .ins { width: 148px; height: 5px; border-radius: 3px; margin: 3px 0; background: var(--gold); animation: blink 1s ease-in-out infinite; }
 .slot { height: 12px; }
 .slot.empty { height: 32px; margin: 2px 6px 2px 0; display: grid; place-items: center; border: 2px dashed #ffffff55; border-radius: 9px; font-size: 12.5px; font-weight: 600; color: #ffffffaa; }
 .slot.empty.here { border-color: var(--gold); color: var(--gold); }
 .ed.ro .slot.empty { border-style: dotted; height: 24px; }
 .chip { width: 100%; max-width: 124px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; min-height: 50px; padding: 2px 1px; border: 0; border-radius: 10px; color: #fff; font-weight: 700; box-shadow: 0 3px 0 #0006; }
-.chip .ic { width: auto; font-size: 19px; line-height: 1.1; }
+.chip .ic { width: 24px; height: 24px; }
 .chip-name { font-size: 11px; white-space: nowrap; }
 .chip:active { transform: translateY(2px); box-shadow: 0 1px 0 #0006; }
 .chip.off { opacity: .4; }
 .cap { margin-left: auto; font-size: 13px; font-weight: 800; color: var(--dim); }
 .cap.full { color: var(--gold); }
 .nudge { animation: nudge .3s; }
+/* Sürükle-bırak. Tutulan yerlerde tarayıcı sayfayı kaydırmaz (touch-action); program alanı blokların
+   yanındaki boşluktan kaydırılır. Sürüklenen kopya (.held) sayfanın en üstüne eklenir ve parmağı izler. */
+.ed:not(.ro) .blk.leaf, .ed:not(.ro) .blk-head, .ed:not(.ro) .blk-mid, .ed:not(.ro) .blk-foot, .chip:not(.off) { touch-action: none; cursor: grab; }
+.blk.lift { opacity: .3; }
+.held { position: fixed; left: 0; top: 0; z-index: 70; margin: 0; pointer-events: none; transform-origin: 30px 19px; filter: drop-shadow(0 8px 8px #000b); }
+.held.hat { min-width: 190px; }
+.drop { position: absolute; left: 0; top: 0; z-index: 2; width: 148px; height: 6px; border-radius: 3px; background: var(--gold); box-shadow: 0 0 10px var(--gold); pointer-events: none; }
+.ed.dragging .ins { visibility: hidden; }
+.ed.dragging .slot.empty.here { background: #ffc94d33; }
+.ed-prog.hat-here { box-shadow: inset 0 0 0 3px var(--gold); }
+.bin { position: absolute; inset: -3px; z-index: 3; display: none; align-items: center; justify-content: center; gap: 8px; border: 3px dashed #ff9a9e; border-radius: 12px; background: #5c2631f2; color: #ffdede; font-weight: 800; font-size: 15px; pointer-events: none; }
+.bin .ic { width: 26px; height: 26px; }
+.ed.moving .bin { display: flex; }
+.ed-pal.hot .bin { background: var(--red); border-style: solid; border-color: #fff; color: #fff; }
 @keyframes blink { 50% { opacity: .45; } }
 @keyframes nudge { 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
 
@@ -183,6 +210,7 @@ button.card:active { transform: translateY(2px); box-shadow: 0 2px 0 #0006; }
 .lesson-title { font-weight: 800; align-self: end; }
 .lesson-give { font-size: 12.5px; color: var(--dim); align-self: start; }
 .lesson.done .lesson-no { background: var(--green); }
+.lesson-no .ic { width: 22px; height: 22px; }
 .lesson.open .lesson-no { background: var(--gold); color: #2a2100; }
 .lesson.locked { opacity: .5; }
 
@@ -191,12 +219,15 @@ button.card:active { transform: translateY(2px); box-shadow: 0 2px 0 #0006; }
 .checks { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 7px; }
 .checks li { display: flex; align-items: center; gap: 8px; color: var(--dim); font-weight: 600; }
 .checks li.done { color: var(--ink); }
-.tick { flex: none; width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; border: 2px solid var(--line); font-size: 13px; font-weight: 900; }
+.tick { flex: none; width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; border: 2px solid var(--line); }
+.tick .ic { width: 14px; height: 14px; }
+.tick svg { stroke-width: 4.4; }
 li.done .tick { background: var(--green); border-color: var(--green); }
 .castles { display: grid; grid-template-columns: repeat(auto-fill, minmax(124px, 1fr)); gap: 10px; }
 .castle { display: flex; flex-direction: column; align-items: center; gap: 7px; border: 0; border-radius: 14px; background: var(--panel); padding: 14px 8px 10px; box-shadow: 0 3px 0 #0006; }
 .castle.new { justify-content: center; min-height: 150px; border: 2px dashed var(--line); background: none; box-shadow: none; }
-.plus { font-size: 42px; line-height: 1; color: var(--gold); }
+.plus { color: var(--gold); }
+.plus .ic { width: 42px; height: 42px; }
 .castle-name { font-weight: 800; font-size: 14px; text-align: center; overflow-wrap: anywhere; }
 .castle-tag { font-size: 11.5px; color: var(--dim); }
 .castle-tag.ok { color: var(--ok); }
@@ -217,7 +248,8 @@ li.done .tick { background: var(--green); border-color: var(--green); }
 .panel.play { align-items: center; justify-content: center; gap: 10px; }
 .stats { align-self: center; font-size: 13px; font-weight: 800; color: var(--dim); white-space: nowrap; }
 .dpad { display: grid; grid-template-columns: repeat(3, 68px); grid-template-rows: repeat(3, 52px); gap: 6px; }
-.key { padding: 0; font-size: 22px; background: #4b4578; }
+.dpad .key { padding: 0; background: #4b4578; }   /* ".key" tek başına tahtadaki anahtarı da boyardı */
+.dpad .key .ic { width: 28px; height: 28px; }
 .kU { grid-area: 1 / 2; } .kL { grid-area: 2 / 1; } .kw { grid-area: 2 / 2; font-size: 14px; } .kR { grid-area: 2 / 3; } .kD { grid-area: 3 / 2; }
 
 /* ── alttan açılan kart, bildirim ── */

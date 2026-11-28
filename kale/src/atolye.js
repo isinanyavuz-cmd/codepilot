@@ -1,15 +1,15 @@
 // Atölye: kale listesi ve kale kurma ekranı. Oyunun merkezi burasıdır: çocuk kareleri doldurur,
-// koyduğu her canavara, kapıya ve dikene program yazar, kalesini kendisi bitirir ve birine oynatır.
+// koyduğu her robota, kapıya ve dikene program yazar, kalesini kendisi bitirir ve birine oynatır.
 import { buildLevel, initState } from './motor.js';
 import { parseProg, printProg, toolsFor, lessonFor, KIND_NAMES } from './bloklar.js';
 import { paint, masterChecks, SAMPLES } from './kaleler.js';
 import { createBoard } from './tahta.js';
 import { createEditor } from './editor.js';
 import { PIECES } from './cizim.js';
-import { h, ask, topbar } from './arayuz.js';
+import { h, ic, ask, topbar } from './arayuz.js';
 import { sfx } from './ses.js';
 
-const TOOL_ORDER = ['select', 'wall', 'erase', 'knight', 'chest', 'monster', 'coin', 'spikes', 'door', 'key', 'plate'];
+const TOOL_ORDER = ['select', 'wall', 'erase', 'knight', 'chest', 'guard', 'coin', 'spikes', 'door', 'key', 'plate'];
 const FREE_TOOLS = new Set(['select', 'erase']);
 const DELETE = Symbol('sil');
 const TOOL_TIP = {
@@ -18,7 +18,7 @@ const TOOL_TIP = {
   erase: 'Sil: kaldırmak istediğin kareye dokun.',
   knight: 'Şövalye buradan başlar: yeni yerine dokun.',
   chest: 'Hazine: yeni yerine dokun.',
-  monster: 'Canavar: koymak istediğin kareye dokun.',
+  guard: 'Robot: koymak istediğin kareye dokun.',
   coin: 'Altın: koymak istediğin karelere dokun.',
   spikes: 'Diken: koymak istediğin kareye dokun.',
   door: 'Kapı: koymak istediğin kareye dokun.',
@@ -41,7 +41,7 @@ export function workshopScreen(ctx) {
   const master = h('section', { class: 'card master' },
     h('h2', { text: checks.every((c) => c.done) ? 'Kale Ustası oldun!' : 'Usta işi' }),
     h('ul', { class: 'checks' }, checks.map((c) => h('li', { class: c.done ? 'done' : '' },
-      h('span', { class: 'tick', text: c.done ? '✓' : '' }),
+      h('span', { class: 'tick' }, c.done && ic('check')),
       h('span', { text: c.text + (!c.done && c.lesson && !open.blocks.has('on') ? ` (${c.lesson}. dersten sonra)` : '') })))));
 
   const mine = h('div', { class: 'castles' },
@@ -49,7 +49,7 @@ export function workshopScreen(ctx) {
       miniBoard(c),
       h('span', { class: 'castle-name', text: c.name }),
       h('span', { class: `castle-tag ${c.proven ? 'ok' : ''}`, text: c.proven ? 'kanıtlandı' : 'yapım aşamasında' }))),
-    h('button', { class: 'castle new', onclick: () => ctx.go(`kur/${ctx.newCastle().id}`) }, h('span', { class: 'plus', text: '+' }), h('span', { class: 'castle-name', text: 'Yeni kale' })));
+    h('button', { class: 'castle new', onclick: () => ctx.go(`kur/${ctx.newCastle().id}`) }, h('span', { class: 'plus' }, ic('plus')), h('span', { class: 'castle-name', text: 'Yeni kale' })));
 
   const samples = SAMPLES.map((s, i) => ({ s, i })).filter(({ s }) => ctx.all || done >= s.lesson);
   const examples = h('div', { class: 'castles' }, samples.map(({ s, i }) => h('div', { class: 'castle sample' },
@@ -86,8 +86,8 @@ export function buildScreen(ctx, castle) {
     topbar(nameBtn, {
       onBack: () => ctx.back('atolye'),
       right: [
-        h('button', { class: 'btn small go', text: '▶ Oyna', onclick: () => ctx.go(`oyna/${castle.id}`) }),
-        h('button', { class: 'btn small', text: 'Paylaş', onclick: () => ctx.share(castle) }),
+        h('button', { class: 'btn small go', onclick: () => ctx.go(`oyna/${castle.id}`) }, ic('play'), 'Oyna'),
+        h('button', { class: 'btn small', onclick: () => ctx.share(castle) }, ic('share'), 'Paylaş'),
       ],
     }),
     h('div', { class: 'game' }, stage, panel));
@@ -99,7 +99,7 @@ export function buildScreen(ctx, castle) {
     board.setLevel(level);
     board.render(initState(level), [], true);
     board.select(sel >= 0 ? sel : null);
-    nameBtn.textContent = `${castle.name} ✎`;
+    nameBtn.replaceChildren(h('span', { class: 'name-text', text: castle.name }), ic('pencil'));
     fit();
   }
 
@@ -122,12 +122,12 @@ export function buildScreen(ctx, castle) {
     panel.classList.toggle('coding', !!ent);
     stage.classList.toggle('coding', !!ent);
     if (!ent) { drawTools(); setMsg(TOOL_TIP[tool]); fit(); return; }
-    const flip = ent.kind === 'monster' ? '↻ Çevir' : ent.kind === 'door' ? (ent.on ? 'Başta: açık' : 'Başta: kapalı') : (ent.on ? 'Başta: yukarıda' : 'Başta: aşağıda');
+    const flip = ent.kind === 'guard' ? [ic('turnR'), 'Çevir'] : [ent.kind === 'door' ? (ent.on ? 'Başta: açık' : 'Başta: kapalı') : (ent.on ? 'Başta: yukarıda' : 'Başta: aşağıda')];
     codeHead.replaceChildren(
       h('span', { class: 'tool-art', html: PIECES[ent.kind].art() }),
       h('b', { text: KIND_NAMES[ent.kind] }),
-      h('button', { class: 'btn small', text: flip, onclick: () => { if (ent.kind === 'monster') ent.dir = (ent.dir + 1) % 4; else ent.on = !ent.on; changed(); mode(); } }),
-      h('button', { class: 'btn small danger', text: 'Kaldır', onclick: () => { castle.ents.splice(sel, 1); sel = -1; changed(); mode(); } }),
+      h('button', { class: 'btn small', onclick: () => { if (ent.kind === 'guard') ent.dir = (ent.dir + 1) % 4; else ent.on = !ent.on; changed(); mode(); } }, flip),
+      h('button', { class: 'btn small danger', 'aria-label': 'Kaldır', onclick: () => { castle.ents.splice(sel, 1); sel = -1; changed(); mode(); } }, ic('trash')),
       h('button', { class: 'btn small go', text: 'Tamam', onclick: () => { sel = -1; tool = 'select'; refresh(); mode(); } }),
     );
     editor.load({ prog: parseProg(ent.prog), tools: toolsFor(ent.kind, open) });

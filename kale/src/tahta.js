@@ -7,7 +7,7 @@ import * as art from './cizim.js';
 const MOVE = { U: 0, R: 1, D: 2, L: 3 };
 const el = (cls, html = '') => { const d = document.createElement('div'); d.className = cls; d.innerHTML = html; return d; };
 const at = (node, x, y) => { node.style.setProperty('--x', x); node.style.setProperty('--y', y); return node; };
-const SAY = { bump: 'GÜM!', roar: 'BÖÖ!', alarm: 'DAN DAN!', catch: 'HAM!', jam: 'SIKIŞTI!', win: 'HAZİNE!' };
+const SAY = { bump: 'GÜM!', honk: 'DÜÜT!', alarm: 'DAN DAN!', catch: 'YAKALADIM!', jam: 'SIKIŞTI!', win: 'HAZİNE!' };
 
 export function createBoard({ onCell } = {}) {
   const root = el('board');
@@ -76,7 +76,7 @@ export function createBoard({ onCell } = {}) {
     lv.ents.forEach((e, i) => {
       const node = el(`ent ${e.kind}`);
       node.dataset.i = i;
-      const body = e.kind === 'monster' ? art.monster(art.MONSTER_COLORS[colour++ % art.MONSTER_COLORS.length]) : art[e.kind]();
+      const body = e.kind === 'guard' ? art.guard(art.GUARD_COLORS[colour++ % art.GUARD_COLORS.length]) : art[e.kind]();
       node.innerHTML = `<div class="hop"><div class="spr">${body}</div></div>`;
       parts.ents.push(node); parts.rot.push(null);
       root.append(node);
@@ -92,7 +92,7 @@ export function createBoard({ onCell } = {}) {
     timers.push(setTimeout(() => b.remove(), 1100));
   }
 
-  /** Durumu çizer; `fx` o turda olanlardır (toslama, kükreme, yakalama…). `snap`: geçişsiz. */
+  /** Durumu çizer; `fx` o turda olanlardır (toslama, korna, yakalama…). `snap`: geçişsiz. */
   function render(state, fx = [], snap = false) {
     if (!level) return;
     if (snap) root.classList.add('snap');
@@ -103,14 +103,14 @@ export function createBoard({ onCell } = {}) {
       const st = state.ents[i], node = parts.ents[i];
       at(node, st.x, st.y);
       node.classList.toggle('on', !!st.on);
-      if (e.kind !== 'monster') return;
+      if (e.kind !== 'guard') return;
       // En kısa yoldan dön: 3 → 0 geçişi geriye doğru üç çeyrek tur atmasın.
       const prev = parts.rot[i];
       let turn = st.dir;
       if (prev !== null) { const d = ((st.dir - prev) % 4 + 4) % 4; turn = prev + (d === 3 ? -1 : d); }
       parts.rot[i] = turn;
       node.style.setProperty('--r', turn);
-      // Görüşe bakan canavarın baktığı kareler hafifçe aydınlanır: "görmek" ne demek, gözle görülsün.
+      // Görüşe bakan robotun baktığı kareler hafifçe aydınlanır: "görmek" ne demek, gözle görülsün.
       const uses = usedIn(e.prog.hats);
       if (state.status === 'play' && (uses.conds.has('see') || uses.events.has('see'))) {
         for (const c of sightCells(level, state, i)) { const b = at(el('beam'), c.x, c.y); parts.beams.push(b); root.append(b); }
@@ -130,7 +130,7 @@ export function createBoard({ onCell } = {}) {
         who.style.setProperty('--bx', DX[f.dir]); who.style.setProperty('--by', DY[f.dir]);
         restart(who, 'bump');
         if (f.who !== 'knight') bubble(ws.x, ws.y, SAY.bump);
-      } else if (f.t === 'roar') { restart(who, 'roar'); bubble(ws.x, ws.y, SAY.roar, 'shout'); }
+      } else if (f.t === 'honk') { restart(who, 'honk'); bubble(ws.x, ws.y, SAY.honk, 'shout'); }
       else if (f.t === 'alarm') { restart(root, 'alarm'); bubble(ws.x, ws.y, SAY.alarm, 'shout'); }
       else if (f.t === 'jam') bubble(ws.x, ws.y, SAY.jam);
       else if (f.t === 'catch') bubble(state.knight.x, state.knight.y, SAY.catch, 'shout');

@@ -1,9 +1,10 @@
-// Canavar Kalesi (kale/): motor, blok ağacı, dersler ve atölye kaleleri.
+// Robot Kalesi (kale/): motor, blok ağacı, dersler ve atölye kaleleri.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildLevel, initState, step, simulate, solve, sightCells } from '../kale/src/motor.js';
-import { parseProg, printProg, cursors, moveNode, removeNode, insertAt, makeBlock, countBlocks, usedIn, unlocks, GIVES, toolsFor, findNode } from '../kale/src/bloklar.js';
+import { parseProg, printProg, moveTo, removeNode, insertAt, makeBlock, countBlocks, usedIn, unlocks, GIVES, toolsFor, findNode, BLOCKS } from '../kale/src/bloklar.js';
 import { LESSONS, runLesson, waveLevel, failText } from '../kale/src/dersler.js';
+import { icon } from '../kale/src/cizim.js';
 import { newCastle, paint, checkCastle, encodeCastle, decodeCastle, masterChecks, SAMPLES, W, H, MAX_ENTS } from '../kale/src/kaleler.js';
 
 /** Kaleyi verilen hamlelerle oynatır; son durumu ve bütün olayları döndürür. */
@@ -20,24 +21,24 @@ const pos = (s, i = 0) => [s.ents[i].x, s.ents[i].y, s.ents[i].dir];
 // ───────────────────────── motor ─────────────────────────
 
 test('bloklar sırayla çalışır; her hareket bir tur sürer', () => {
-  const spec = { rows: ['....', '....'], ents: [{ kind: 'monster', x: 0, y: 0, dir: 1, prog: 'ffrf' }] };
+  const spec = { rows: ['....', '....'], ents: [{ kind: 'guard', x: 0, y: 0, dir: 1, prog: 'ffrf' }] };
   assert.deepEqual(pos(run(spec, 1).state), [1, 0, 1]);
   assert.deepEqual(pos(run(spec, 3).state), [2, 0, 2]);
   assert.deepEqual(pos(run(spec, 4).state), [2, 1, 2]);
-  assert.deepEqual(pos(run(spec, 9).state), [2, 1, 2], 'program bitince canavar yerinde durur');
+  assert.deepEqual(pos(run(spec, 9).state), [2, 1, 2], 'program bitince robot yerinde durur');
 });
 
-test('duvara, kale dışına ve hazineye toslayan canavar yerinde kalır', () => {
-  const r = run({ rows: ['.#', 'H.'], ents: [{ kind: 'monster', x: 0, y: 0, dir: 1, prog: 'frflf' }] }, 5);
+test('duvara, kale dışına ve hazineye toslayan robot yerinde kalır', () => {
+  const r = run({ rows: ['.#', 'H.'], ents: [{ kind: 'guard', x: 0, y: 0, dir: 1, prog: 'frflf' }] }, 5);
   assert.deepEqual(pos(r.state), [0, 0, 1]);
   assert.equal(r.state.bumps, 3);
   assert.equal(r.fx.filter((f) => f.t === 'bump').length, 3);
 });
 
 test('tekrarla sayısı kadar, sürekli tekrarla hiç durmadan döner', () => {
-  const lane = { rows: ['.......'], ents: [{ kind: 'monster', x: 0, y: 0, dir: 1, prog: 'R3(f)' }] };
+  const lane = { rows: ['.......'], ents: [{ kind: 'guard', x: 0, y: 0, dir: 1, prog: 'R3(f)' }] };
   assert.deepEqual(pos(run(lane, 10).state), [3, 0, 1]);
-  const patrol = { rows: ['...'], ents: [{ kind: 'monster', x: 0, y: 0, dir: 1, prog: 'F(ffrr)' }] };
+  const patrol = { rows: ['...'], ents: [{ kind: 'guard', x: 0, y: 0, dir: 1, prog: 'F(ffrr)' }] };
   assert.deepEqual(pos(run(patrol, 4).state), [2, 0, 3]);
   assert.deepEqual(pos(run(patrol, 8).state), [0, 0, 1]);
   assert.deepEqual(pos(run(patrol, 8 * 5 + 2).state), [2, 0, 1]);
@@ -45,14 +46,14 @@ test('tekrarla sayısı kadar, sürekli tekrarla hiç durmadan döner', () => {
 
 test('hareketsiz dönen sürekli döngü turu bekleyerek geçirir, oyunu kilitlemez', () => {
   for (const prog of ['F()', 'F(Ie(d)())', 'F(R9(R9(R9())))', 'R9(R9(R9(R9())))f']) {
-    const r = run({ rows: ['...'], ents: [{ kind: 'monster', x: 0, y: 0, dir: 1, prog }] }, 3);
+    const r = run({ rows: ['...'], ents: [{ kind: 'guard', x: 0, y: 0, dir: 1, prog }] }, 3);
     assert.equal(r.state.t, 3, prog);
   }
-  assert.deepEqual(pos(run({ rows: ['...'], ents: [{ kind: 'monster', x: 0, y: 0, dir: 1, prog: 'R9(R9(R9()))f' }] }, 4).state), [1, 0, 1]);
+  assert.deepEqual(pos(run({ rows: ['...'], ents: [{ kind: 'guard', x: 0, y: 0, dir: 1, prog: 'R9(R9(R9()))f' }] }, 4).state), [1, 0, 1]);
 });
 
 test('eğer / değilse önüne bakar: kapalıysa döner, açıksa yürür', () => {
-  const r = run({ rows: ['...#', '....'], ents: [{ kind: 'monster', x: 0, y: 0, dir: 1, prog: 'F(Iw(r)(f))' }] }, 4);
+  const r = run({ rows: ['...#', '....'], ents: [{ kind: 'guard', x: 0, y: 0, dir: 1, prog: 'F(Iw(r)(f))' }] }, 4);
   assert.deepEqual(pos(r.state), [2, 1, 2]);
 });
 
@@ -66,37 +67,37 @@ test('şövalye yürür, duvara toslar, altın ve anahtar toplar, hazineye varı
   assert.equal(play(spec, 'RRDRLL').state.t, 4, 'oyun bitince tur ilerlemez');
 });
 
-test('canavar şövalyenin üstüne yürürse ya da şövalye ona çarparsa yakalanır', () => {
-  const walkIn = play({ rows: ['S.H'], ents: [{ kind: 'monster', x: 1, y: 0, dir: 1, prog: '' }] }, 'R');
+test('robot şövalyenin üstüne yürürse ya da şövalye ona çarparsa yakalanır', () => {
+  const walkIn = play({ rows: ['S.H'], ents: [{ kind: 'guard', x: 1, y: 0, dir: 1, prog: '' }] }, 'R');
   assert.equal(walkIn.state.status, 'caught');
-  const chase = play({ rows: ['S...H'], ents: [{ kind: 'monster', x: 3, y: 0, dir: 3, prog: 'd' }] }, 'R');
+  const chase = play({ rows: ['S...H'], ents: [{ kind: 'guard', x: 3, y: 0, dir: 3, prog: 'd' }] }, 'R');
   assert.deepEqual([chase.state.status, chase.state.by], ['caught', 0]);
-  const miss = play({ rows: ['S....', '....H'], ents: [{ kind: 'monster', x: 4, y: 0, dir: 3, prog: 'f' }] }, 'D');
+  const miss = play({ rows: ['S....', '....H'], ents: [{ kind: 'guard', x: 4, y: 0, dir: 3, prog: 'f' }] }, 'D');
   assert.equal(miss.state.status, 'play');
 });
 
 test('görüş düz bir çizgidir; duvar ve kapalı kapı keser', () => {
-  const level = buildLevel({ rows: ['....#.'], ents: [{ kind: 'monster', x: 0, y: 0, dir: 1, prog: '' }, { kind: 'door', x: 2, y: 0, on: false, prog: '' }] });
+  const level = buildLevel({ rows: ['....#.'], ents: [{ kind: 'guard', x: 0, y: 0, dir: 1, prog: '' }, { kind: 'door', x: 2, y: 0, on: false, prog: '' }] });
   assert.equal(sightCells(level, initState(level), 0).length, 1);
-  const open = buildLevel({ rows: ['....#.'], ents: [{ kind: 'monster', x: 0, y: 0, dir: 1, prog: '' }, { kind: 'door', x: 2, y: 0, on: true, prog: '' }] });
+  const open = buildLevel({ rows: ['....#.'], ents: [{ kind: 'guard', x: 0, y: 0, dir: 1, prog: '' }, { kind: 'door', x: 2, y: 0, on: true, prog: '' }] });
   assert.equal(sightCells(open, initState(open), 0).length, 3);
 });
 
 test('"görünce" olayı görmeye başladığı an bir kez çalışır, işi yarıda keser, sonra kalınan yerden sürer', () => {
-  // Canavar sağa bakarak yerinde dönüp duruyor; şövalye çizgisine girince iki kez kükrer, sonra dönmeye devam eder.
-  const spec = { rows: ['.....', '....S'], ents: [{ kind: 'monster', x: 0, y: 0, dir: 1, prog: '@s(F(w))@e(bb)' }] };
+  // Robot sağa bakarak yerinde dönüp duruyor; şövalye çizgisine girince iki kez korna çalar, sonra dönmeye devam eder.
+  const spec = { rows: ['.....', '....S'], ents: [{ kind: 'guard', x: 0, y: 0, dir: 1, prog: '@s(F(w))@e(bb)' }] };
   const r = play(spec, '.U...');
-  assert.deepEqual(r.fx.filter((f) => f.t === 'roar').length, 2);
+  assert.deepEqual(r.fx.filter((f) => f.t === 'honk').length, 2);
   const again = play(spec, '.U..D.U..');
-  assert.equal(again.fx.filter((f) => f.t === 'roar').length, 4, 'çizgiden çıkıp yeniden girince olay bir daha çalışır');
+  assert.equal(again.fx.filter((f) => f.t === 'honk').length, 4, 'çizgiden çıkıp yeniden girince olay bir daha çalışır');
 });
 
-test('olaylar bir sonraki canavar turunda duyulur: altın, anahtar, düğme, alarm', () => {
+test('olaylar bir sonraki robot turunda duyulur: altın, anahtar, düğme, alarm', () => {
   const spec = {
     rows: ['Sakd...'],
     ents: [
       { kind: 'door', x: 5, y: 0, on: false, prog: '@s()@c(o)@k(c)@p(o)' },
-      { kind: 'monster', x: 6, y: 0, dir: 0, prog: '@s()@p(a)@a(b)' },
+      { kind: 'guard', x: 6, y: 0, dir: 0, prog: '@s()@p(a)@a(b)' },
     ],
   };
   const doorOn = (moves) => play(spec, moves).state.ents[0].on;
@@ -104,28 +105,28 @@ test('olaylar bir sonraki canavar turunda duyulur: altın, anahtar, düğme, ala
   assert.equal(doorOn('RR'), false, 'anahtar alınınca kapan');
   assert.equal(doorOn('RRR'), true, 'düğmeye basılınca açıl');
   assert.equal(play(spec, 'RRR').fx.some((f) => f.t === 'alarm'), true);
-  assert.equal(play(spec, 'RRR').fx.some((f) => f.t === 'roar'), false, 'alarm aynı turda duyulmaz');
-  assert.equal(play(spec, 'RRR.').fx.some((f) => f.t === 'roar'), true);
+  assert.equal(play(spec, 'RRR').fx.some((f) => f.t === 'honk'), false, 'alarm aynı turda duyulmaz');
+  assert.equal(play(spec, 'RRR.').fx.some((f) => f.t === 'honk'), true);
 });
 
-test('kapı: kapalıyken geçilmez, arasında biri varken kapanmaz; canavar da düğmeye basar', () => {
+test('kapı: kapalıyken geçilmez, arasında biri varken kapanmaz; robot da düğmeye basar', () => {
   const shut = play({ rows: ['S..H'], ents: [{ kind: 'door', x: 1, y: 0, on: false, prog: '' }] }, 'RR');
   assert.equal(shut.state.knight.x, 0);
   const jam = play({ rows: ['S..H'], ents: [{ kind: 'door', x: 1, y: 0, on: true, prog: 'c' }] }, 'R.');
   assert.equal(jam.state.ents[0].on, true);
   assert.equal(jam.fx.some((f) => f.t === 'jam'), true);
-  const plate = run({ rows: ['.d..'], ents: [{ kind: 'monster', x: 0, y: 0, dir: 1, prog: 'f' }, { kind: 'door', x: 3, y: 0, on: false, prog: '@s()@p(o)' }] }, 2);
+  const plate = run({ rows: ['.d..'], ents: [{ kind: 'guard', x: 0, y: 0, dir: 1, prog: 'f' }, { kind: 'door', x: 3, y: 0, on: false, prog: '@s()@p(o)' }] }, 2);
   assert.equal(plate.state.ents[1].on, true);
 });
 
-test('diken: yukarıdayken basan da, üstündeyken çıkan dikene yakalanan da yanar; canavara işlemez', () => {
+test('diken: yukarıdayken basan da, üstündeyken çıkan dikene yakalanan da yanar; robota işlemez', () => {
   const up = play({ rows: ['S.H'], ents: [{ kind: 'spikes', x: 1, y: 0, on: true, prog: '' }] }, 'R');
   assert.equal(up.state.status, 'caught');
   const rising = play({ rows: ['S.H'], ents: [{ kind: 'spikes', x: 1, y: 0, on: false, prog: 'wu' }] }, '.R');
   assert.equal(rising.state.status, 'caught');
   const safe = play({ rows: ['S.H'], ents: [{ kind: 'spikes', x: 1, y: 0, on: true, prog: 'nwwu' }] }, '.RR');
   assert.equal(safe.state.status, 'won');
-  const beast = run({ rows: ['...'], ents: [{ kind: 'monster', x: 0, y: 0, dir: 1, prog: 'ff' }, { kind: 'spikes', x: 1, y: 0, on: true, prog: '' }] }, 2);
+  const beast = run({ rows: ['...'], ents: [{ kind: 'guard', x: 0, y: 0, dir: 1, prog: 'ff' }, { kind: 'spikes', x: 1, y: 0, on: true, prog: '' }] }, 2);
   assert.deepEqual(pos(beast.state), [2, 0, 1]);
 });
 
@@ -136,7 +137,7 @@ test('türüne uymayan blok atlanır (elle kurcalanmış program oyunu bozmaz)',
 });
 
 test('step saftır: verilen durumu değiştirmez', () => {
-  const level = buildLevel({ rows: ['S..H'], ents: [{ kind: 'monster', x: 2, y: 0, dir: 3, prog: 'F(w)' }] });
+  const level = buildLevel({ rows: ['S..H'], ents: [{ kind: 'guard', x: 2, y: 0, dir: 3, prog: 'F(w)' }] });
   const s0 = initState(level), copy = JSON.stringify(s0);
   step(level, s0, 'R');
   assert.equal(JSON.stringify(s0), copy);
@@ -158,27 +159,43 @@ test('kısa yazım: bozuk metin hata verir, sonsuz derinlik ve uzunluk kabul edi
   }
 });
 
-test('imleç sırası okuma sırasıdır; "aşağı taşı" bloğu döngünün içine sokar, sonundan çıkarır', () => {
+test('sürükle-bırak: blok aynı dizide, döngünün içine ve dışına taşınır', () => {
   const prog = parseProg('fR2(l)r');
-  assert.equal(cursors(prog).length, 6);
-  const f = prog[0].b[0].id;
-  const steps = [];
-  for (let i = 0; i < 6; i++) { steps.push(printProg(prog)); if (!moveNode(prog, f, 1)) break; }
-  assert.deepEqual(steps, ['fR2(l)r', 'R2(fl)r', 'R2(lf)r', 'R2(l)fr', 'R2(l)rf']);
-  assert.equal(moveNode(prog, f, 1), false, 'en sonda aşağı gidilmez');
-  for (let i = 0; i < 4; i++) moveNode(prog, f, -1);
+  const main = prog[0], f = main.b[0].id, loop = main.b[1];
+  const to = (owner, i, br = 'b') => ({ owner: owner.id, br, i });
+  assert.equal(moveTo(prog, f, to(main, 0)), false, 'kendi yerine bırakılınca bir şey değişmez');
+  assert.equal(moveTo(prog, f, to(main, 1)), false, 'hemen altına bırakmak da yerinde bırakmaktır');
+  assert.equal(moveTo(prog, f, to(loop, 0)), true);
+  assert.equal(printProg(prog), 'R2(fl)r');
+  assert.equal(moveTo(prog, f, to(loop, 2)), true);
+  assert.equal(printProg(prog), 'R2(lf)r');
+  assert.equal(moveTo(prog, f, to(main, 2)), true, 'imleç, blok çıkarılmadan önceki sıraya göredir');
+  assert.equal(printProg(prog), 'R2(l)rf');
+  assert.equal(moveTo(prog, f, to(main, 0)), true);
   assert.equal(printProg(prog), 'fR2(l)r');
-  assert.equal(moveNode(prog, f, -1), false, 'en başta yukarı gidilmez');
+  assert.equal(moveTo(prog, f, to(main, 99)), true, 'sıra dizinin sonuna kırpılır');
+  assert.equal(printProg(prog), 'R2(l)rf');
 });
 
-test('blok eğer bloğunun iki dalına ve başka şapkaya da taşınır', () => {
-  const prog = parseProg('@s(Iw()()f)@c()');
-  const f = prog[0].b[1].id;
-  const seen = [printProg(prog)];
-  while (moveNode(prog, f, -1)) seen.push(printProg(prog));
-  assert.deepEqual(seen, ['@s(Iw()()f)@c()', '@s(Iw()(f))@c()', '@s(Iw(f)())@c()', '@s(fIw()())@c()']);
-  for (let i = 0; i < 4; i++) moveNode(prog, f, 1);
-  assert.equal(printProg(prog), '@s(Iw()())@c(f)');
+test('sürükle-bırak: gövdeli blok içindekilerle taşınır, kendi içine girmez; şapka taşınmaz', () => {
+  const prog = parseProg('@s(R2(fIw(l)(r))w)@c()');
+  const [main, coin] = prog, loop = main.b[0], iff = loop.b[1];
+  assert.equal(moveTo(prog, loop.id, { owner: loop.id, br: 'b', i: 0 }), false, 'kendi gövdesine giremez');
+  assert.equal(moveTo(prog, loop.id, { owner: iff.id, br: 'o', i: 1 }), false, 'içindeki bloğun dalına da giremez');
+  assert.equal(printProg(prog), '@s(R2(fIw(l)(r))w)@c()');
+  assert.equal(moveTo(prog, main.b[1].id, { owner: iff.id, br: 'o', i: 0 }), true, '"değilse" dalına bırakılır');
+  assert.equal(printProg(prog), '@s(R2(fIw(l)(wr)))@c()');
+  assert.equal(moveTo(prog, loop.id, { owner: coin.id, br: 'b', i: 0 }), true, 'başka şapkaya içindekilerle gider');
+  assert.equal(printProg(prog), '@s()@c(R2(fIw(l)(wr)))');
+  assert.equal(moveTo(prog, coin.id, { owner: main.id, br: 'b', i: 0 }), false, 'şapka taşınmaz');
+  assert.equal(moveTo(prog, 'yok', { owner: main.id, br: 'b', i: 0 }), false);
+  assert.equal(moveTo(prog, loop.id, { owner: 'yok', br: 'b', i: 0 }), false);
+});
+
+test('her bloğun ikonu çizilidir', () => {
+  const empty = icon('böyle bir ikon yok');
+  for (const [t, def] of Object.entries(BLOCKS)) assert.ok(icon(def.icon).length > empty.length + 20, `${t}: "${def.icon}" ikonu yok`);
+  assert.notEqual(icon('turnL'), icon('turnR'), 'sola ve sağa dönüş ayrı çizilir');
 });
 
 test('ekleme, silme ve sayma', () => {
@@ -247,10 +264,10 @@ test('ders alanları tutarlı: her denemede aynı parçalar, her parçaya bir pr
 });
 
 test('olmayınca söylenen cümle büyük harfle başlar ve hangi denemede olduğunu söyler', () => {
-  assert.equal(failText(LESSONS[2], runLesson(LESSONS[2], starts(LESSONS[2]))), 'Güm! Canavar tosladı ve bayrağa varamadı.');
-  assert.equal(failText(LESSONS[1], runLesson(LESSONS[1], ['f'])), 'Canavar bayrağa varmadan durdu.');
-  assert.equal(failText(LESSONS[4], runLesson(LESSONS[4], ['ff'])), 'Canavar durdu ama 3 bayrak kaldı.');
-  assert.equal(failText(LESSONS[7], runLesson(LESSONS[7], ['fffrffrff'])), 'Güm! 2. denemede canavar tosladı ve bayrağa varamadı.');
+  assert.equal(failText(LESSONS[2], runLesson(LESSONS[2], starts(LESSONS[2]))), 'Güm! Robot tosladı ve bayrağa varamadı.');
+  assert.equal(failText(LESSONS[1], runLesson(LESSONS[1], ['f'])), 'Robot bayrağa varmadan durdu.');
+  assert.equal(failText(LESSONS[4], runLesson(LESSONS[4], ['ff'])), 'Robot durdu ama 3 bayrak kaldı.');
+  assert.equal(failText(LESSONS[7], runLesson(LESSONS[7], ['fffrffrff'])), 'Güm! 2. denemede robot tosladı ve bayrağa varamadı.');
   assert.equal(failText(LESSONS[8], runLesson(LESSONS[8], ['rd'])), '2. denemede şövalye kaçtı!');
   assert.equal(failText(LESSONS[9], runLesson(LESSONS[9], ['c'])), '1. denemede kapı erken kapandı: şövalye içeri giremedi.');
   assert.equal(failText(LESSONS[0], runLesson(LESSONS[0], [''])), 'Program boş: önce birkaç blok ekle.');
@@ -320,8 +337,8 @@ test('dersler atölyeyi adım adım açar; bir dersin çözümündeki her şey o
     });
   }
   const all = unlocks('all');
-  assert.deepEqual([...all.pieces].sort(), ['chest', 'coin', 'door', 'key', 'knight', 'monster', 'plate', 'spikes', 'wall']);
-  assert.deepEqual(toolsFor('monster', all).blocks, ['fwd', 'left', 'right', 'dash', 'wait', 'roar', 'alarm', 'repeat', 'forever', 'if', 'on']);
+  assert.deepEqual([...all.pieces].sort(), ['chest', 'coin', 'door', 'guard', 'key', 'knight', 'plate', 'spikes', 'wall']);
+  assert.deepEqual(toolsFor('guard', all).blocks, ['fwd', 'left', 'right', 'dash', 'wait', 'honk', 'alarm', 'repeat', 'forever', 'if', 'on']);
   assert.deepEqual(toolsFor('door', unlocks([1, 2, 3, 4, 5, 6, 7])).blocks, ['open', 'close', 'wait', 'repeat', 'forever']);
 });
 
@@ -355,7 +372,7 @@ test('kareye parça koymak: şövalye ve hazine tektir, üstlerine bir şey konm
   assert.equal(paint(c, 'knight', 1, 1, ALL).ok, true);
   assert.equal(c.rows.join('').split('S').length - 1, 1);
   assert.equal(c.rows[0][0], '.');
-  assert.equal(paint(c, 'chest', 3, 4, ALL).ok, true, 'hazine canavarın karesine taşınınca canavar kalkar');
+  assert.equal(paint(c, 'chest', 3, 4, ALL).ok, true, 'hazine robotun karesine taşınınca robot kalkar');
   assert.equal(c.ents.length, 0);
   assert.equal(paint(c, 'erase', 5, 5, ALL).ok, false, 'boş kare silinmez');
   const door = paint(c, 'door', 5, 5, ALL);
@@ -368,9 +385,9 @@ test('kareye parça koymak: şövalye ve hazine tektir, üstlerine bir şey konm
 test('bir kalede en çok on programlı parça olur', () => {
   const c = newCastle('k1', 'Kale 1', ALL);
   let placed = c.ents.length;
-  for (let x = 0; x < W && placed < MAX_ENTS; x++) for (let y = 1; y < 3 && placed < MAX_ENTS; y++) { if (paint(c, 'monster', x, y, ALL).ok) placed++; }
+  for (let x = 0; x < W && placed < MAX_ENTS; x++) for (let y = 1; y < 3 && placed < MAX_ENTS; y++) { if (paint(c, 'guard', x, y, ALL).ok) placed++; }
   assert.equal(c.ents.length, MAX_ENTS);
-  assert.match(paint(c, 'monster', 6, 3, ALL).error, /en çok/);
+  assert.match(paint(c, 'guard', 6, 3, ALL).error, /en çok/);
   assert.equal(paint(c, 'door', c.ents[0].x, c.ents[0].y, ALL).ok, true, 'var olan parçanın yerine yenisi konabilir');
 });
 
@@ -390,6 +407,10 @@ test('bozuk ya da kurcalanmış bağlantı geri çevrilir', () => {
   const enc = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
   const good = { v: 1, n: 'x', r: 'S..../...../...H.', e: [['m', 1, 1, 1, 0, 'f']] };
   assert.doesNotThrow(() => decodeCastle(enc(good)));
+  // İlk sürümün bağlantıları ('m') ve kayıtları ('monster') robot olarak açılır.
+  assert.equal(decodeCastle(enc(good)).ents[0].kind, 'guard');
+  assert.equal(decodeCastle(enc({ ...good, e: [['g', 1, 1, 1, 0, 'f']] })).ents[0].kind, 'guard');
+  assert.equal(checkCastle({ name: 'eski', rows: ['S....', '.....', '...H.'], ents: [{ kind: 'monster', x: 1, y: 1, dir: 1, on: false, prog: 'F(ffrr)' }] }).ents[0].kind, 'guard');
   const cases = [
     'saçma', '', enc({}), enc({ ...good, v: 2 }), enc({ ...good, r: 'S.../...' }), enc({ ...good, r: 'S..../...../..HH.' }),
     enc({ ...good, r: 'S..../..<../...H.' }), enc({ ...good, e: [['q', 1, 1, 1, 0, 'f']] }), enc({ ...good, e: [['m', 9, 1, 1, 0, 'f']] }),

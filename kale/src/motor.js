@@ -1,7 +1,7 @@
-// Canavar Kalesi'nin kuralları. Saf mantık: DOM'a dokunmaz, rastgelelik kullanmaz.
+// Robot Kalesi'nin kuralları. Saf mantık: DOM'a dokunmaz, rastgelelik kullanmaz.
 //
 // Oyun tur tur ilerler. Her turda önce şövalye bir hamle yapar, sonra kaledeki programlı her şey
-// (canavar, kapı, diken) programından TEK bir hareket yapar. step() yeni durumu ve o turda
+// (robot, kapı, diken) programından TEK bir hareket yapar. step() yeni durumu ve o turda
 // olanların listesini (fx) döndürür; çizim bu listeyi oynatır.
 import { parseProg, uid } from './bloklar.js';
 
@@ -10,7 +10,7 @@ export const DY = [-1, 0, 1, 0];
 const MOVE = { U: 0, R: 1, D: 2, L: 3 };
 const ITEM = { a: 'coin', k: 'key', d: 'plate', F: 'flag' };
 const KIND_ACTS = {
-  monster: new Set(['fwd', 'dash', 'left', 'right', 'wait', 'roar', 'alarm']),
+  guard: new Set(['fwd', 'dash', 'left', 'right', 'wait', 'honk', 'alarm']),
   door: new Set(['open', 'close', 'wait']),
   spikes: new Set(['up', 'down', 'wait']),
 };
@@ -27,7 +27,7 @@ function compile(prog) {
 /**
  * Tarif → oynanabilir kale.
  *   rows: '.' zemin, '#' duvar, 'S' şövalye, 'H' hazine, 'a' altın, 'k' anahtar, 'd' düğme, 'F' bayrak
- *   ents: [{ kind: 'monster' | 'door' | 'spikes', x, y, dir, on, prog }]   (on: kapı açık / diken yukarıda başlar)
+ *   ents: [{ kind: 'guard' | 'door' | 'spikes', x, y, dir, on, prog }]   (on: kapı açık / diken yukarıda başlar)
  *   path: derslerde şövalyenin yazılı yolu ('RRD.L', nokta beklemektir); yoksa şövalyeyi oyuncu yürütür
  */
 export function buildLevel(spec) {
@@ -73,16 +73,16 @@ const inside = (level, x, y) => x >= 0 && y >= 0 && x < level.w && y < level.h;
 const doorShut = (level, s, x, y) => { const i = level.doorAt[key(x, y)]; return i !== undefined && !s.ents[i].on; };
 /** Şövalye bu kareye giremez: kale dışı, duvar ya da kapalı kapı. */
 const solid = (level, s, x, y) => !inside(level, x, y) || level.wall[y][x] || doorShut(level, s, x, y);
-const monsterAt = (level, s, x, y, except = -1) => s.ents.findIndex((e, i) => i !== except && level.ents[i].kind === 'monster' && e.x === x && e.y === y);
+const guardAt = (level, s, x, y, except = -1) => s.ents.findIndex((e, i) => i !== except && level.ents[i].kind === 'guard' && e.x === x && e.y === y);
 const knightAt = (s, x, y) => !!s.knight && s.knight.alive && s.knight.x === x && s.knight.y === y;
-/** Canavar bu kareye giremez: şövalyenin giremediği yerler, hazine sandığı ve başka bir canavar. */
+/** Robot bu kareye giremez: şövalyenin giremediği yerler, hazine sandığı ve başka bir robot. */
 function blocked(level, s, x, y, self) {
   if (solid(level, s, x, y)) return true;
   if (level.chest && level.chest.x === x && level.chest.y === y) return true;
-  return monsterAt(level, s, x, y, self) >= 0;
+  return guardAt(level, s, x, y, self) >= 0;
 }
 
-/** Canavarın baktığı yönde, duvara ya da kapalı kapıya kadar gördüğü kareler. */
+/** Robotun baktığı yönde, duvara ya da kapalı kapıya kadar gördüğü kareler. */
 export function sightCells(level, s, i) {
   const e = s.ents[i], out = [];
   let x = e.x + DX[e.dir], y = e.y + DY[e.dir];
@@ -111,7 +111,7 @@ function knightPhase(level, s, move, fx) {
   if (solid(level, s, x, y)) { fx.push({ t: 'bump', who: 'knight', dir: d }); return; }
   k.x = x; k.y = y;
   fx.push({ t: 'move', who: 'knight' });
-  const m = monsterAt(level, s, x, y);
+  const m = guardAt(level, s, x, y);
   if (m >= 0) return caught(s, fx, m);
   const sp = level.spikesAt[key(x, y)];
   if (sp !== undefined && s.ents[sp].on) return caught(s, fx, sp);
@@ -156,7 +156,7 @@ function nextAction(level, s, i) {
   return { t: 'wait', id: null, implicit: true };
 }
 
-function moveMonster(level, s, i, steps, fx) {
+function moveGuard(level, s, i, steps, fx) {
   const st = s.ents[i];
   for (let k = 0; k < steps; k++) {
     const x = st.x + DX[st.dir], y = st.y + DY[st.dir];
@@ -175,16 +175,16 @@ function act(level, s, i, fx) {
   st.cur = n ? n.id : null;
   if (!n) return;
   switch (n.t) {
-    case 'fwd': moveMonster(level, s, i, 1, fx); break;
-    case 'dash': moveMonster(level, s, i, 2, fx); break;
+    case 'fwd': moveGuard(level, s, i, 1, fx); break;
+    case 'dash': moveGuard(level, s, i, 2, fx); break;
     case 'left': st.dir = (st.dir + 3) % 4; fx.push({ t: 'turn', who: i }); break;
     case 'right': st.dir = (st.dir + 1) % 4; fx.push({ t: 'turn', who: i }); break;
-    case 'roar': fx.push({ t: 'roar', who: i }); break;
+    case 'honk': fx.push({ t: 'honk', who: i }); break;
     case 'alarm': s.queue.push('alarm'); fx.push({ t: 'alarm', who: i }); break;
     case 'open': if (!st.on) { st.on = true; fx.push({ t: 'door', who: i, on: true }); } break;
     case 'close':
       if (!st.on) break;
-      if (knightAt(s, st.x, st.y) || monsterAt(level, s, st.x, st.y) >= 0) fx.push({ t: 'jam', who: i });   // kapı arasında biri var
+      if (knightAt(s, st.x, st.y) || guardAt(level, s, st.x, st.y) >= 0) fx.push({ t: 'jam', who: i });   // kapı arasında biri var
       else { st.on = false; fx.push({ t: 'door', who: i, on: false }); }
       break;
     case 'up':
@@ -201,7 +201,7 @@ function entityPhase(level, s, fx) {
   s.queue = [];
   level.ents.forEach((e, i) => {
     const st = s.ents[i], mine = [...heard];
-    if (e.kind === 'monster') {
+    if (e.kind === 'guard') {
       const sees = canSee(level, s, i);
       if (sees && !st.saw) mine.push('see');        // "görünce": görmeye başladığı an
       st.saw = sees;
@@ -232,10 +232,10 @@ const allIdle = (s) => s.ents.every((e) => !e.stack.length) && !s.queue.length;
 
 /**
  * Ders hedefi tuttu mu? Sürüyorsa null; bitince { ok, why }.
- *   flags: canavarlar her bayrağa `times` kez dokunsun
+ *   flags: robotlar her bayrağa `times` kez dokunsun
  *   catch: şövalye kaçmadan yakalansın
  *   trap:  şövalye yolunun sonunda `zone` içinde kalsın (kapı arkasından kapansın)
- *   predict: program bitince canavar nerede? (cevap `end`)
+ *   predict: program bitince robot nerede? (cevap `end`)
  */
 export function judge(level, s, goal, limit = 80) {
   const pathDone = !!level.path && s.t >= level.path.length;

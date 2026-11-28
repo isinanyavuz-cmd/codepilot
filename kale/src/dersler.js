@@ -1,4 +1,4 @@
-// Canavar Okulu: on bir kısa ders. Her ders tek bir fikir öğretir ve atölyeye bir şey açar.
+// Robot Okulu: on bir kısa ders. Her ders tek bir fikir öğretir ve atölyeye bir şey açar.
 //
 // Bir dersin alanları: waves (denemeler; aynı program hepsinde tutmalı), parts (programlanan parçalar),
 // goal (motor.js → judge), solution (testler için örnek çözüm), hints.
@@ -8,75 +8,75 @@
 // Yıldız ve puan yok. Ders geçilince sıradaki açılır; ödül atölyeye gelen yeni blok ya da parçadır.
 import { buildLevel, simulate } from './motor.js';
 
-const monster = (x, y, dir) => ({ kind: 'monster', x, y, dir });
+const guard = (x, y, dir) => ({ kind: 'guard', x, y, dir });
 
 export const LESSONS = [
   {
     id: 1, title: 'İlk Adım', type: 'yaz', coach: true,
-    text: 'Canavarı bayrağa götür.',
-    waves: [{ rows: ['#####', '...F#', '#####'], ents: [monster(0, 1, 1)] }],
+    text: 'Robotu bayrağa götür.',
+    waves: [{ rows: ['#####', '...F#', '#####'], ents: [guard(0, 1, 1)] }],
     parts: [{ start: 'f', tools: { blocks: ['fwd'] } }],
     goal: { type: 'flags' }, solution: ['fff'],
-    hints: ['Her «ileri git» canavarı bir kare yürütür.', 'Bayrak üç kare ötede: üç «ileri git» gerek.'],
+    hints: ['Her «ileri git» robotu bir kare yürütür.', 'Bayrak üç kare ötede: üç «ileri git» gerek.'],
   },
   {
     id: 2, title: 'Köşe', type: 'yaz',
     text: 'Köşeyi dön, bayrağa var.',
-    waves: [{ rows: ['#####', '#..F#', '#.###', '#.###'], ents: [monster(1, 3, 0)] }],
+    waves: [{ rows: ['#####', '#..F#', '#.###', '#.###'], ents: [guard(1, 3, 0)] }],
     parts: [{ start: '', tools: { blocks: ['fwd', 'left', 'right'] } }],
     goal: { type: 'flags' }, solution: ['ffrff'],
-    hints: ['«sağa dön» canavarı yürütmez; yalnızca baktığı yönü çevirir.', 'İki ileri, sağa dön, iki ileri.'],
+    hints: ['«sağa dön» robotu yürütmez; yalnızca baktığı yönü çevirir.', 'İki ileri, sağa dön, iki ileri.'],
   },
   {
     id: 3, title: 'Yanlış Dönüş', type: 'duzelt',
     text: 'Bu program bir yerde yanlış dönüyor. Bul, düzelt.',
-    waves: [{ rows: ['F..##', '##.##', '##..#'], ents: [monster(3, 2, 3)] }],
+    waves: [{ rows: ['F..##', '##.##', '##..#'], ents: [guard(3, 2, 3)] }],
     parts: [{ start: 'frffrff', tools: { blocks: ['fwd', 'left', 'right'] } }],
     goal: { type: 'flags' }, solution: ['frfflff'],
-    hints: ['Önce çalıştır ve canavarın nerede tosladığına bak.', 'Yanlış bloğa dokun, sil; yerine doğrusunu koy.'],
+    hints: ['Önce çalıştır ve robotun nerede tosladığına bak.', 'Yanlış bloğa dokun: üstünde çıkan ✕ onu siler. Yerine doğrusunu sürükle.'],
   },
   {
     id: 4, title: 'Uzun Koridor', type: 'yaz',
     text: 'Çantan yalnız 2 blok alıyor. «tekrarla» ile bayrağa var.',
-    waves: [{ rows: ['#######', '......F', '#######'], ents: [monster(0, 1, 1)] }],
+    waves: [{ rows: ['#######', '......F', '#######'], ents: [guard(0, 1, 1)] }],
     parts: [{ start: '', cap: 2, tools: { blocks: ['fwd', 'repeat'] } }],
     goal: { type: 'flags' }, solution: ['R6(f)'],
-    hints: ['«tekrarla» içine konan bloğu yazdığın sayı kadar yapar.', 'Sayıya dokun ve 6 yap; içine bir «ileri git» koy.'],
+    hints: ['«tekrarla» içine konan bloğu yazdığın sayı kadar yapar.', 'Sayıya dokun ve 6 yap; içine bir «ileri git» sürükle.'],
   },
   {
     id: 5, title: 'Kare Tur', type: 'yaz',
     text: 'Dört bayrağa da dokun. Çantan 4 blok alıyor.',
-    waves: [{ rows: ['.F.', 'F#F', '.F.'], ents: [monster(0, 2, 0)] }],
+    waves: [{ rows: ['.F.', 'F#F', '.F.'], ents: [guard(0, 2, 0)] }],
     parts: [{ start: '', cap: 4, tools: { blocks: ['fwd', 'left', 'right', 'repeat'] } }],
     goal: { type: 'flags' }, solution: ['R4(ffr)'],
-    hints: ['Her kenarda aynı şeyi yapıyorsun: iki ileri, bir dönüş.', 'Bu üç bloğu «4 kez tekrarla» içine koy.'],
+    hints: ['Her kenarda aynı şeyi yapıyorsun: iki ileri, bir dönüş.', 'Bu üç bloğu «4 kez tekrarla» içine sürükle.'],
   },
   {
     id: 6, title: 'Nöbet', type: 'yaz',
     text: 'Nöbetçi hiç durmaz: iki bayrağa da ikişer kez dokun.',
-    waves: [{ rows: ['#####', '#F.F#', '#####'], ents: [monster(1, 1, 1)] }],
+    waves: [{ rows: ['#####', '#F.F#', '#####'], ents: [guard(1, 1, 1)] }],
     parts: [{ start: '', cap: 5, tools: { blocks: ['fwd', 'left', 'right', 'forever'] } }],
     goal: { type: 'flags', times: 2 }, solution: ['F(ffrr)'],
     hints: ['«sürekli tekrarla» içindekileri hiç bırakmadan baştan yapar.', 'Geri dönmek için iki kez aynı yöne dön.'],
   },
   {
     id: 7, title: 'Tahmin Et', type: 'tahmin',
-    text: 'Programı oku: canavar hangi karede duracak? O kareye dokun.',
-    // İki başlangıç: tahmin tutmazsa canavar ötekinden başlar, böylece görülen cevap ezberlenmez.
+    text: 'Programı oku: robot hangi karede duracak? O kareye dokun.',
+    // İki başlangıç: tahmin tutmazsa robot ötekinden başlar, böylece görülen cevap ezberlenmez.
     waves: [
-      { rows: ['.....', '.....', '.....'], ents: [monster(0, 2, 1)] },
-      { rows: ['.....', '.....', '.....'], ents: [monster(4, 0, 3)] },
+      { rows: ['.....', '.....', '.....'], ents: [guard(0, 2, 1)] },
+      { rows: ['.....', '.....', '.....'], ents: [guard(4, 0, 3)] },
     ],
     parts: [{ start: 'R2(flfr)f', lock: true, tools: { blocks: [] } }],
     goal: { type: 'predict' }, solution: ['R2(flfr)f'],
-    hints: ['Parmağınla canavarı adım adım yürüt; dönüşlerde yalnız yönü değişir.', 'Döngü iki kez dönüyor; ondan sonra bir «ileri git» daha var.'],
+    hints: ['Parmağınla robotu adım adım yürüt; dönüşlerde yalnız yönü değişir.', 'Döngü iki kez dönüyor; ondan sonra bir «ileri git» daha var.'],
   },
   {
     id: 8, title: 'Duvara Kadar', type: 'yaz',
     text: 'Koridor her denemede değişiyor. Önü kapalıysa dönsün, açıksa yürüsün.',
     waves: [
-      { rows: ['....#', '###.#', '#F..#', '#####'], ents: [monster(0, 0, 1)] },
-      { rows: ['..###', '#.###', '#.###', 'F.###'], ents: [monster(0, 0, 1)] },
+      { rows: ['....#', '###.#', '#F..#', '#####'], ents: [guard(0, 0, 1)] },
+      { rows: ['..###', '#.###', '#.###', 'F.###'], ents: [guard(0, 0, 1)] },
     ],
     parts: [{ start: 'F(Iw()())', tools: { blocks: ['fwd', 'left', 'right', 'forever', 'if'], conds: ['wall'] } }],
     goal: { type: 'flags' }, solution: ['F(Iw(r)(f))'],
@@ -86,9 +86,9 @@ export const LESSONS = [
     id: 9, title: 'Gözcü', type: 'yaz',
     text: 'Hırsız şövalye her denemede başka koridordan geliyor. Gözcün dönerek baksın, görünce koşsun.',
     waves: [
-      { rows: ['###.###', '###.###', '.....aS', '###.###', '###.###'], ents: [monster(3, 2, 0)], path: 'L....R' },
-      { rows: ['###.###', '###.###', 'Sa.....', '###.###', '###.###'], ents: [monster(3, 2, 0)], path: 'R....L' },
-      { rows: ['###.###', '###.###', '.......', '###a###', '###S###'], ents: [monster(3, 2, 0)], path: 'U....D' },
+      { rows: ['###.###', '###.###', '.....aS', '###.###', '###.###'], ents: [guard(3, 2, 0)], path: 'L....R' },
+      { rows: ['###.###', '###.###', 'Sa.....', '###.###', '###.###'], ents: [guard(3, 2, 0)], path: 'R....L' },
+      { rows: ['###.###', '###.###', '.......', '###a###', '###S###'], ents: [guard(3, 2, 0)], path: 'U....D' },
     ],
     parts: [{ start: '', tools: { blocks: ['fwd', 'dash', 'left', 'right', 'forever', 'if'], conds: ['see', 'wall'] } }],
     goal: { type: 'catch' }, solution: ['F(Ie(d)(r))'],
@@ -109,11 +109,11 @@ export const LESSONS = [
     id: 11, title: 'Alarm', type: 'yaz',
     text: 'Kapı göremez, gözcü görür. Gözcü alarm çalsın; kapı alarmı duyunca kapansın.',
     waves: [
-      { rows: ['#######', 'S.....#', '####.##', '####.##'], ents: [{ kind: 'monster', x: 4, y: 3, dir: 0 }, { kind: 'door', x: 3, y: 1, on: true }], path: 'RRRRRLLLLL' },
-      { rows: ['#######', 'S.....#', '####.##', '####.##'], ents: [{ kind: 'monster', x: 4, y: 3, dir: 0 }, { kind: 'door', x: 3, y: 1, on: true }], path: 'R.R.R.RRR.LLLLL' },
+      { rows: ['#######', 'S.....#', '####.##', '####.##'], ents: [{ kind: 'guard', x: 4, y: 3, dir: 0 }, { kind: 'door', x: 3, y: 1, on: true }], path: 'RRRRRLLLLL' },
+      { rows: ['#######', 'S.....#', '####.##', '####.##'], ents: [{ kind: 'guard', x: 4, y: 3, dir: 0 }, { kind: 'door', x: 3, y: 1, on: true }], path: 'R.R.R.RRR.LLLLL' },
     ],
     parts: [
-      { name: 'Gözcü', start: '', tools: { blocks: ['alarm', 'roar', 'on'], events: ['start', 'see'] } },
+      { name: 'Gözcü', start: '', tools: { blocks: ['alarm', 'honk', 'on'], events: ['start', 'see'] } },
       { name: 'Kapı', start: '', tools: { blocks: ['open', 'close', 'on'], events: ['start', 'alarm'] } },
     ],
     goal: { type: 'trap', zone: { x0: 4, y0: 1, x1: 5, y1: 1 } }, solution: ['@s()@e(a)', '@s()@a(c)'],
@@ -149,9 +149,9 @@ export function failText(lesson, res) {
   const say = (subject, rest) => `${nth ? nth + subject : subject[0].toLocaleUpperCase('tr') + subject.slice(1)} ${rest}`;
   switch (res.why) {
     case 'empty': return 'Program boş: önce birkaç blok ekle.';
-    case 'bump': return `Güm! ${say('canavar', 'tosladı ve bayrağa varamadı.')}`;
-    case 'short': return say('canavar', res.left > 1 ? `durdu ama ${res.left} bayrak kaldı.` : 'bayrağa varmadan durdu.');
-    case 'time': return say('süre', 'doldu: canavar bayraklara yetişemedi.');
+    case 'bump': return `Güm! ${say('robot', 'tosladı ve bayrağa varamadı.')}`;
+    case 'short': return say('robot', res.left > 1 ? `durdu ama ${res.left} bayrak kaldı.` : 'bayrağa varmadan durdu.');
+    case 'time': return say('süre', 'doldu: robot bayraklara yetişemedi.');
     case 'escaped': return say('şövalye', 'kaçtı!');
     case 'early': return say('kapı', 'erken kapandı: şövalye içeri giremedi.');
     case 'open': return say('kapı', 'açık kaldı: şövalye kaçtı.');
