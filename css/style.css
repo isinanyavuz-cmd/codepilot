@@ -834,6 +834,11 @@ button.node:not(.locked):active { transform: scale(.92); }
   #map { padding-bottom: 160px; }
   .mapstats #musicBtn, .mapstats #voiceBtn { display: none; }
 }
+/* Kırpılan görev metni (telefon): altında "devamı" işareti durur; dokununca metnin tamamı açılır. */
+#game .brief.more { cursor: pointer; }
+#game .brief.more::after { content: '▾ devamı'; position: sticky; bottom: 0; flex: none; order: 3; margin: -17px 0 0 auto; padding: 1px 0 1px 34px;
+                           font-size: 11px; font-weight: 800; line-height: 15px; letter-spacing: .03em; color: #ffe9a3; background: linear-gradient(90deg, rgba(20, 28, 62, 0), rgba(20, 28, 62, .98) 30px); pointer-events: none; }
+#game[data-brief="open"]:not([data-drawer="open"]) .code .brief { max-height: 46%; }
 /* Uçuş kipi (dik telefon): gemi uçarken görev metni ve palet gizlenir, panel kısalır; uçuş alanı
    büyür. Program alanı (çalışan blok görünür kalır) ve düğmeler yerindedir. Uçuş bitince panel eski
    boyuna döner. Çekmece elle açıldıysa ona dokunulmaz. */

@@ -57,6 +57,12 @@ export class Game {
       if (b && !b.classList.contains('locked') && b.dataset.level !== this.level.id) { sfx.click(); this.open(LEVELS.find((l) => l.id === b.dataset.level)); }
     });
     $('scrubRange').addEventListener('input', (e) => this.scrubTo(Number(e.target.value)));
+    // Dar ekranda görev metni panele sığmaz, kırpılır: metne dokununca tamamı açılır, yeniden dokununca kapanır.
+    $('panel').querySelector('.brief').addEventListener('click', (e) => {
+      const game = $('game'), open = game.dataset.brief === 'open';
+      if (e.target.closest('button') || (!open && !e.currentTarget.classList.contains('more'))) return;
+      sfx.click(); game.dataset.brief = open ? '' : 'open'; this.layout();
+    });
     this.bindDrawer();
     for (const id of ['quizBtns', 'picks']) $(id).addEventListener('click', (e) => { const b = e.target.closest('[data-pick]'); if (b) this.pickAnswer(Number(b.dataset.pick)); });
     $('speakBtn').hidden = !voice.supported;
@@ -78,7 +84,7 @@ export class Game {
     this.quiz = level.tahmin ? { score: [], python: !!level.python } : null;
     $('game').dataset.mode = level.tahmin ? 'tahmin' : '';
     $('quizBar').hidden = !this.quiz; $('picks').replaceChildren();
-    $('game').hidden = false; $('game').dataset.drawer = '';
+    $('game').hidden = false; $('game').dataset.drawer = ''; $('game').dataset.brief = '';
     $('game').dataset.sensors = level.conds.length ? '1' : '';
     // Serbest görevler (günün dalgası, atölye) bir sektöre bağlı değildir: şerit gizlenir, başlık görevin adıdır.
     $('sectorNo').textContent = level.free ? EXTRA_LABEL[level.extra] : `SEKTÖR ${sector.id}`;
@@ -199,6 +205,9 @@ export class Game {
     this.rect = { x: 0, y: stageTop, w: stacked ? W : p.left - 6, h: Math.max(72, stageBottom - stageTop) };
     this.portrait = phone;
     // Dik telefonda uçuş alanı küçükse köşesinde "dokun, büyüsün" işareti durur (bkz. bindDrawer).
+    // Görev metni kırpıldıysa altında "devamı" işareti durur (dokununca açılır).
+    const brief = $('panel').querySelector('.brief');
+    brief.classList.toggle('more', $('game').dataset.brief !== 'open' && brief.scrollHeight - brief.clientHeight > 6);
     const peek = $('peekHint');
     peek.hidden = !(phone && !this.quiz && this.drawer === '' && !this.flying && this.rect.h < 230);
     if (!peek.hidden) Object.assign(peek.style, { left: '10px', top: `${this.rect.y + this.rect.h - 30}px` });
