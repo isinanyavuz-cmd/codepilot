@@ -4,9 +4,14 @@
 /** @param look  content/hangar.js içindeki lookOf() sonucu */
 export function shipSvg(look, cls = '') {
   const { hull, accent, flame, shape } = look;
+  const px = (12 * shape.wing).toFixed(2);
+  // Motor kapsülü (gondol): x=0 çevresinde çizilir, iki yana kaydırılır.
+  const pod = `<path d="M0-11c2.200 1 3 3 3 6v17h-6V-5c0-3 .800-5 3-6z" fill="${hull.color}"/><path d="M0-11c2.200 1 3 3 3 6h-6c0-3 .800-5 3-6z" fill="${accent.color}"/>`;
   return `<svg viewBox="-24 -24 48 48" class="${cls}" style="overflow:visible" aria-hidden="true">`
-    + `<path class="flame" d="M-7 13L-4.500 27-2 13zM2 13l2.500 14L7 13z" fill="${flame.color}"/>`
-    + `<g transform="scale(${shape.wing} 1)"><path d="M-5-2L-21 11v5l16-3zM5-2l16 13v5L5 13z" fill="${hull.color}"/><path d="M-21 11v5l6-1.200V7zM21 11v5l-6-1.200V7z" fill="${accent.color}"/></g>`
-    + `<g transform="translate(0 12) scale(1 ${shape.nose}) translate(0 -12)"><path d="M0-21C3.500-15 5-7 5 3v9h-10V3c0-10 1.500-18 5-24z" fill="${hull.color}"/><path d="M0-21C3.500-15 5-7 5 3v9H0z" fill="rgba(255,255,255,.22)"/>`
-    + `<ellipse cx="0" cy="-6" rx="2.300" ry="5.500" fill="#2fc8ff"/><rect x="-1.200" y="3" width="2.400" height="8" rx="1" fill="${accent.color}"/></g></svg>`;
+    + `<path class="flame" d="M-3 14L0 27l3-13zM-${px} 12l-2 11 2 1 2-1-2-11zM${px} 12l-2 11 2 1 2-1-2-11z" fill="${flame.color}"/>`
+    + `<rect x="-${px}" y="3" width="${(24 * shape.wing).toFixed(2)}" height="5" fill="#27324f"/><rect x="-${px}" y="3.600" width="${(24 * shape.wing).toFixed(2)}" height="1.300" fill="${accent.color}"/>`
+    + `<g transform="translate(-${px} 0)">${pod}</g><g transform="translate(${px} 0)">${pod}</g>`
+    + `<g transform="translate(0 14) scale(1 ${shape.nose}) translate(0 -14)"><path d="M0-21l3 5 4 13 1 9-1 6-3 2h-8l-3-2-1-6 1-9 4-13z" fill="${hull.color}"/><path d="M0-21l3 5 4 13 1 9-1 6-3 2H0z" fill="rgba(255,255,255,.18)"/>`
+    + `<path d="M0-12l1.400 4v17l-1.400 3-1.400-3V-8z" fill="#27324f"/><ellipse cx="0" cy="-10" rx="2.600" ry="4.200" fill="#2fc8ff"/>`
+    + `<path d="M-7-1l-1 9 1.600-.200.800-8.400zM7-1l1 9-1.600-.200-.800-8.400z" fill="${accent.color}"/></g></svg>`;
 }
