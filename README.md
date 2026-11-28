@@ -173,6 +173,17 @@ Sonra tarayıcıda `http://localhost:8080` adresini aç. Fare ve dokunmatik ekra
 - Görev ekranındaki kamera düğmesi **pilot kamerasına** geçer; kazanılan uçuş sonuç
   kartındaki **İzle** ile öteki kameradan yeniden oynatılır.
 
+### Telefonda
+
+- Kod paneli bir **çekmecedir**, üç konumu var: tutamağa dokununca (ya da yukarı çekince)
+  program alanı büyür; uçuş alanına dokununca (ya da tutamağı aşağı çekince) panel küçülür,
+  alan büyür. Küçük alanın köşesindeki işaret bunu haber verir.
+- **Uçuş kipi**: gemi uçarken görev metni ve palet kendiliğinden gizlenir, uçuş alanı büyür;
+  program alanı ve düğmeler yerinde kalır. Uçuş bitince ya da programa dokununca panel geri gelir.
+- Sensörlerin sorduğu sorular ve cevapları (EVET / HAYIR) uçuş sırasında panelde, programın
+  hemen üstünde görünür; geniş ekranlarda bakılan karenin yanında balon olarak durur.
+- Uzun alanlarda kamera biraz yatar: on iki sıralı bir alan da ekrana okunur boyda sığar.
+
 ## Veli paneli
 
 Köprüdeki **Veli** düğmesi şifreyle açılır; şifre BİLSEM uygulamasındaki veli şifresiyle aynıdır
@@ -264,7 +275,9 @@ tek yöne kaçmak, olayın işini döngüye yaptırmak, hiç şarj etmemek, fonk
 "olana kadar" yerine "sürekli tekrarla" koymak, bir dalgayı ezberlemek…). Kavramı atlayıp
 tam yıldız alan her yol bir **uyarı**dır; bilerek bırakılanlar nedenleriyle `KABUL`
 listesinde durur. Listede olmayan yeni bir uyarı testleri kırar. Tek görev:
-`npm run denetle -- 7-8`.
+`npm run denetle -- 7-8`. "Hata avı" görevlerinde hazır programın tek bir hamleyle
+(bir değeri, koşulu ya da adı değiştirmek, iki bloğun sırasını değiştirmek, bir bloğu başka
+bir yere taşımak, tek blok eklemek) düzeldiğini de denetler.
 
 ### Yeni sahne eklemek
 
@@ -304,6 +317,20 @@ mantık da tam yıldız alır, kalkanı olaya bağlamayan program Sektör 5'i ge
 dönüştür (sensörlerin göremediği, mor halkanın haber verdiği dönüş). Bir görevi
 baştan tasarlarsan `rev` değerini artır: eski tasarım için kaydedilmiş program
 yeniden açılmaz, kazanılan yıldızlar kalır.
+
+Alanın görünüşü için iki seçenek daha var. `canyon: tohum` rotanın en az iki şerit uzağındaki
+boş karelere kaya serper: o kareleri hiçbir sensör görmez, çözüm değişmez; alan ortası boş bir
+ızgara yerine bir asteroit kanyonu olur. `guarded: true` korsanın durduğu sırada öteki bütün
+şeritleri kayayla kapatır: korsan bir geçidi tutar, yanından dolaşılamaz. Çok dalgalı görevlerde
+`waves([yol1, yol2, yol3], seçenekler)` her yol için bir dalga kurar.
+
+**Her görevin alanı kendine özgüdür.** Aynı dalga kümesini birden çok görevde kullanma; testler
+bunu denetler (yalnız 6-2 ile 6-3 bilerek aynı rotayı paylaşır: aynı yol, yeni yazım). Bir
+sektördeki görevlerin her biri ayrı bir fikir taşımalı: aynı programı bir kez daha yazdırmak
+ya da aynı tek dokunuşu tekrarlatmak yerine yeni bir soru sor (ör. 3-6 soru sırasını, 5-3 olayın
+döngüden önce kurulmasını, 5-7 kalkanın döngüde açılamayacağını sorar). Üretilen dalgalara
+kristal `withCrystals()` ile konur (`src/content/gen.js`): kristaller doğru sayılan bütün
+çözümlerin ortak yoluna, istenirse yalnız bir çözümün geçtiği karelere düşer.
 
 Yan görevler `src/content/extras.js` içindedir: `secret(sektör, …)`, `alarm(sektör,
 yanındakiGörev, …)`, `fork(sektör, anaGörev, …)`. Alanları ana görevlerle aynıdır;

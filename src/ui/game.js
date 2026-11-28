@@ -200,7 +200,7 @@ export class Game {
     this.portrait = phone;
     // Dik telefonda uçuş alanı küçükse köşesinde "dokun, büyüsün" işareti durur (bkz. bindDrawer).
     const peek = $('peekHint');
-    peek.hidden = !(phone && this.drawer === '' && !this.flying && this.rect.h < 230);
+    peek.hidden = !(phone && !this.quiz && this.drawer === '' && !this.flying && this.rect.h < 230);
     if (!peek.hidden) Object.assign(peek.style, { left: '10px', top: `${this.rect.y + this.rect.h - 30}px` });
     // Çekmece oynatılınca ve uçuş kipinde arka plan (gezegen) yerinde kalır; yalnız ızgara boy değiştirir.
     this.view.setRect(this.rect, this.drawer === '' && !this.flying);
