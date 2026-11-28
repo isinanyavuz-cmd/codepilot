@@ -224,11 +224,13 @@ export const ADVANCED_LEVELS = [
     hint: 'Olay bloğunun adına dokun. Kristal korsandan sonra geliyor, uyarı için geç!',
   }),
   mission({
-    kind: 'dene', title: 'Kristal Sinyali', tools: EVENT_TOOLS, events: ['crystal', 'beacon'], rev: 2,
-    brief: 'Kristali toplayınca kalkan açılsın. Olayın içini tamamla ve iki korsanın yanından güvenle geç.',
+    // 5-1 ile aynı işi (olayın içine kalkan koymak) tekrarlamak yerine olayların ikinci kuralı:
+    // olay bloğu, hiç bitmeyen uçuş döngüsünden önce kurulmalıdır.
+    kind: 'dene', title: 'Geç Kalan Olay', tools: EVENT_TOOLS, events: ['pirate'], rev: 3,
+    brief: 'Olay bloğu döngünün **altında** kalmış. Sürekli tekrarla hiç bitmediği için gemi o bloğa hiç ulaşmıyor: olayı **döngünün üstüne** taşı.',
     waves: [route('FFFFFFFF', { crystals: [2, 5], pirates: [4, 7], guarded: true, canyon: 53 })],
-    initial: () => [on('crystal'), cruise()], solution: () => [on('crystal', shield()), cruise()],
-    hint: 'Kalkan aç bloğu, kristal toplayınca olayının içinde olmalı.',
+    initial: () => [cruise(), on('pirate', shield())], solution: () => [on('pirate', shield()), cruise()],
+    hint: 'Gemi blokları yukarıdan aşağıya okur. Sarı olay bloğunu sürükleyip "sürekli tekrarla"nın üstüne bırak.',
   }),
   mission({
     kind: 'pekistir', title: 'Meteor ve Korsan', tools: EVENT_TOOLS, events: ['pirate'], conds: ['ahead'],
@@ -252,11 +254,12 @@ export const ADVANCED_LEVELS = [
     hint: 'Korsan olayı kalkanı açarken, eğer blokları meteorlar için yol seçer.',
   }),
   mission({
-    kind: 'hata', title: 'Yanlış Alarm', tools: EVENT_TOOLS, events: ['pirate', 'beacon', 'crystal'],
-    brief: 'Kalkan komutu doğru ama hiç çalışmıyor. Beklenen olay doğru mu? Olayın adını değiştirerek programı düzelt.',
+    // Olayın adını değiştirmek 5-2'de yapıldı; buradaki hata olayların asıl yanılgısıdır: işi döngüye yaptırmak.
+    kind: 'hata', title: 'Her Adımda Kalkan', tools: EVENT_TOOLS, events: ['pirate'], rev: 2,
+    brief: 'Bu program kalkanı **her adımda** açmaya çalışıyor; açık kalkan yeniden açılamaz. **Kalkan aç** bloğunu döngüden alıp korsan olayının içine taşı.',
     waves: [route('FFFFFFFF', { pirates: [2, 5], crystals: [6], guarded: true, canyon: 57 })],
-    initial: () => [on('beacon', shield()), cruise()], solution: () => [on('pirate', shield()), cruise()],
-    hint: 'Bu rotada mor işaret yok. Kalkan korsan görünce açılmalı.',
+    initial: () => [on('pirate'), forever(shield(), F())], solution: () => [on('pirate', shield()), cruise()],
+    hint: 'Kalkan yalnızca korsan görünce açılmalı. Kalkan aç bloğunu sürükleyip sarı olay bloğunun içine bırak; döngüde yalnız düz uç kalsın.',
   }),
   mission({
     kind: 'final', title: 'Korsan Bölgesi Finali', tools: EVENT_TOOLS, events: ['pirate'], conds: ['atBeacon', ...SENSORS], boss: true,
@@ -394,11 +397,11 @@ export const ADVANCED_LEVELS = [
   // ───────────── 8 · Bütün kavramların birleştiği final ─────────────
   mission({
     kind: 'tanis', title: 'Ana Gemiye Doğru', tools: ALL_TOOLS, events: ['pirate'], conds: ['atBeacon', ...SENSORS],
-    brief: 'Son sektöre hoş geldin! Sensörlü rota hazır. Korsan olayına eksik **kalkan aç** bloğunu ekle ve üç dalgayı geç.',
+    brief: 'Son sektöre hoş geldin! Sensörlü rota hazır ama korsanlara karşılık veren yok. En başa **korsan görünce** olayını kur, içine **kalkan aç** koy.',
     waves: waves(['FRRFLLFFFF', 'LFLFRFRFFF', 'RLFLFRFFFF'], { beacons: [7], pirates: [2, 5, 8], crystals: [3, 6], canyon: 81 }),
-    initial: () => [on('pirate'), until('atBeacon', steer()), cruise()],
+    initial: () => [until('atBeacon', steer()), cruise()],
     solution: () => [on('pirate', shield()), until('atBeacon', steer()), cruise()],
-    hint: 'Korsan olayı hem halkaya kadar hem de halkadan sonra çalışır.',
+    hint: 'Paletten "olay olunca" bloğunu programın en üstüne koy, içine kalkan aç bırak. Olay hem halkaya kadar hem de halkadan sonra çalışır.',
   }),
   mission({
     kind: 'dene', title: 'Otopilotun Beyni', tools: ALL_TOOLS, functions: ['safe'], conds: SENSORS,
@@ -410,12 +413,12 @@ export const ADVANCED_LEVELS = [
   }),
   mission({
     kind: 'dene', title: 'Otomatik Şarj', tools: ALL_TOOLS, events: ['energy'],
-    brief: 'Üç enerjiyle başlıyoruz. **Şarja varınca** olayının içine 3 enerji eklemeyi koy; uzun uçuş kesilmesin.',
+    brief: '**Şarja varınca** olayının içine 3 enerji eklemeyi koy. Kalkış enerjisini de sen ayarla: ilk istasyon üç adım uzakta.',
     // Atlas'a giden dar koridor: üç şerit, on bir sıra; depodan (9) uzun olduğu için şarjsız geçilmez.
     waves: [route('FFFFFFFFFFF', { start: 1, lanes: 3, energy: [3, 6, 9], crystals: [2, 5, 8, 10] })],
-    initial: () => [on('energy'), setEnergy(3), cruise()],
+    initial: () => [on('energy'), cruise()],
     solution: () => [on('energy', addEnergy(3)), setEnergy(3), cruise()],
-    hint: 'Olayın içindeki enerji komutu, istasyona vardığın anda çalışır.',
+    hint: 'Olayın içine "enerjiyi artır" koy (3). Uçuş döngüsünden önce "enerjiyi ayarla" bloğunu ekle: ilk istasyona yetecek kadar, 3.',
   }),
   mission({
     kind: 'pekistir', title: 'Mantık ve Savunma', tools: ALL_TOOLS, events: ['pirate'], conds: ['atBeacon', 'aheadAndRightFree'],

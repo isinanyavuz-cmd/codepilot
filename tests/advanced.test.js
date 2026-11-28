@@ -349,6 +349,24 @@ test('Sektör 5: korsanlar geçit tutar; hiçbir dalgada korsana uğramadan çı
   for (const p of [[forever(F())], [L(), forever(F())], [R(), forever(F())], [L(), L(), forever(F())], [R(), R(), forever(F())]]) assert.ok(!wins(first, p));
 });
 
+test('Sektör 5: her görevin kendi fikri var: olay döngüden önce kurulur, kalkan döngüde açılmaz', () => {
+  // 5-3: döngünün altında kalan olay bloğuna hiç ulaşılmaz; yukarı taşınınca program geçer.
+  const late = levelById('5-3'), stuck = fly(late, late.initial())[0];
+  assert.equal(stuck.reason, 'pirate');
+  assert.equal(stuck.events.filter((e) => e.t === 'event').length, 0, 'olay hiç kurulmadı');
+  assert.equal(starsOf(late, [...late.initial()].reverse()), 3, 'iki bloğun yerini değiştirmek yeter');
+  // 5-7: kalkanı her adımda açmak ikinci adımda "kalkan zaten açık" diye durur; bloğu olaya taşımak düzeltir.
+  const loop = levelById('5-7'), bad = loop.initial(), first = fly(loop, bad)[0];
+  assert.equal(first.reason, 'shield');
+  assert.equal(first.ticks, 1);
+  const moved = loop.initial(), [guard] = moved[1].body.splice(0, 1);
+  moved[0].body.push(guard);
+  assert.equal(starsOf(loop, moved), 3);
+  // Sektörde aynı başlangıç programı iki görevde tekrar etmez.
+  const starts = levelsOf(5).filter((l) => l.initial).map((l) => toPython(l.initial()));
+  assert.equal(new Set(starts).size, starts.length);
+});
+
 test('VEYA görevinde her koşul tek başına da tetikler; hata avında yalnızca koşulu değiştirmek yeter', () => {
   const or = levelById('4-4'), field = parseField(or.waves[0]);
   const senses = simulate(field, or.solution()).events.filter((e) => e.t === 'sense' && e.result);

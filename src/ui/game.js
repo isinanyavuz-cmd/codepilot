@@ -79,6 +79,7 @@ export class Game {
     $('game').dataset.mode = level.tahmin ? 'tahmin' : '';
     $('quizBar').hidden = !this.quiz; $('picks').replaceChildren();
     $('game').hidden = false; $('game').dataset.drawer = '';
+    $('game').dataset.sensors = level.conds.length ? '1' : '';
     // Serbest görevler (günün dalgası, atölye) bir sektöre bağlı değildir: şerit gizlenir, başlık görevin adıdır.
     $('sectorNo').textContent = level.free ? EXTRA_LABEL[level.extra] : `SEKTÖR ${sector.id}`;
     $('sectorName').textContent = level.extra === 'gunluk' ? dayTitle(level.day) : level.free ? level.title : sector.name;
@@ -143,7 +144,7 @@ export class Game {
     this.music.theme(0); this.music.tension(0);
     this.hideCall(); this.hideToast(); this.hideOverlay(); this.editor.closePop(); this.voice.stop();
     $('picks').replaceChildren();
-    $('game').hidden = true;
+    $('game').hidden = true; $('game').dataset.fly = '';
     if (navigate && location.hash) history.pushState(null, '', location.pathname + location.search);
     this.onExit(this.level);
   }
@@ -195,9 +196,14 @@ export class Game {
     const stageTop = phone ? Math.max($('game').querySelector('.top').getBoundingClientRect().bottom, $('hud').getBoundingClientRect().bottom, telemetry?.bottom ?? 0) + 8
       : stacked && telemetry ? telemetry.bottom + 8 : stacked ? 66 : top;
     const stageBottom = stacked ? p.top - 4 : telemetry ? telemetry.top - 8 : H - 6;
-    this.rect = { x: 0, y: stageTop, w: stacked ? W : p.left - 6, h: Math.max(120, stageBottom - stageTop) };
-    // Çekmece açıkken arka plan (gezegen) yerinde kalır; yalnız ızgara küçülür.
-    this.view.setRect(this.rect, !this.drawerOpen);
+    this.rect = { x: 0, y: stageTop, w: stacked ? W : p.left - 6, h: Math.max(72, stageBottom - stageTop) };
+    this.portrait = phone;
+    // Dik telefonda uçuş alanı küçükse köşesinde "dokun, büyüsün" işareti durur (bkz. bindDrawer).
+    const peek = $('peekHint');
+    peek.hidden = !(phone && this.drawer === '' && !this.flying && this.rect.h < 230);
+    if (!peek.hidden) Object.assign(peek.style, { left: '10px', top: `${this.rect.y + this.rect.h - 30}px` });
+    // Çekmece oynatılınca ve uçuş kipinde arka plan (gezegen) yerinde kalır; yalnız ızgara boy değiştirir.
+    this.view.setRect(this.rect, this.drawer === '' && !this.flying);
     this.compact = compact; toast.classList.toggle('docked', compact);
     if (compact) {
       const y = phone ? stageTop : Math.max(stageTop, $('game').querySelector('.top').getBoundingClientRect().bottom + 8);
@@ -213,23 +219,45 @@ export class Game {
    * aşağı çekince küçülür. Uçur'a basınca kendiliğinden küçülür, uçuş alanı görünür.
    */
   bindDrawer() {
-    const btn = $('drawerBtn');
+    const btn = $('drawerBtn'), ORDER = ['min', '', 'open'];
     let y0 = null, moved = false;
     btn.addEventListener('pointerdown', (e) => { y0 = e.clientY; moved = false; btn.setPointerCapture?.(e.pointerId); });
     btn.addEventListener('pointermove', (e) => {
       if (y0 === null || moved) return;
       const dy = e.clientY - y0;
-      if (Math.abs(dy) > 24) { moved = true; this.setDrawer(dy < 0); }
+      // Yukarı çekmek bir konum büyütür (küçük → orta → büyük), aşağı çekmek bir konum küçültür.
+      if (Math.abs(dy) > 24) { moved = true; this.setDrawer(ORDER[Math.max(0, Math.min(2, ORDER.indexOf(this.drawer) + (dy < 0 ? 1 : -1)))]); }
     });
     btn.addEventListener('pointerup', () => { y0 = null; });
-    btn.addEventListener('click', () => { if (moved) { moved = false; return; } this.sfx.click(); this.setDrawer(!this.drawerOpen); });
+    btn.addEventListener('click', () => { if (moved) { moved = false; return; } this.sfx.click(); this.setDrawer(this.drawer === '' ? 'open' : ''); });
+    // Uçuş alanına dokununca panel küçülür, alan büyür; yeniden dokununca eski haline döner.
+    // Yalnız dik telefonda: öteki düzenlerde alan zaten geniştir.
+    $('game').addEventListener('click', (e) => {
+      if (e.target !== $('game') || !this.portrait || this.flying || this.quiz) return;
+      this.sfx.click(); this.setDrawer(this.drawer === 'min' ? '' : 'min');
+    });
     $('panel').addEventListener('transitionend', (e) => { if (e.target === $('panel') && e.propertyName === 'height') this.layout(); });
   }
-  get drawerOpen() { return $('game').dataset.drawer === 'open'; }
-  setDrawer(open) {
-    if (open === this.drawerOpen) return;
-    $('game').dataset.drawer = open ? 'open' : '';
-    const btn = $('drawerBtn');
+  /** Çekmecenin konumu: '' orta (varsayılan), 'open' büyük (program alanı), 'min' küçük (uçuş alanı). */
+  get drawer() { return $('game').dataset.drawer || ''; }
+  get drawerOpen() { return this.drawer === 'open'; }
+  /**
+   * Uçuş kipi (dik telefon): gemi uçarken panelde yalnız program ve düğmeler kalır; görev metni ile
+   * palet gizlenir, uçuş alanı büyür (bkz. style.css, data-fly). Uçuş bitince ya da programa
+   * dokununca panel eski boyuna döner. Geniş ekranlarda görünümü değiştirmez.
+   */
+  get flying() { return $('game').dataset.fly === '1'; }
+  setFlying(on) {
+    if (this.flying === on) return;
+    // Geçiş anlıktır (çekmecenin yükseklik geçişi beklenmez): alan hemen yeni boyuna sığdırılır.
+    const p = $('panel');
+    p.style.transition = 'none'; $('game').dataset.fly = on ? '1' : ''; void p.offsetHeight; p.style.transition = '';
+    this.layout();
+  }
+  setDrawer(state) {
+    if (state === this.drawer) return;
+    $('game').dataset.drawer = state;
+    const btn = $('drawerBtn'), open = state === 'open';
     btn.setAttribute('aria-expanded', String(open));
     btn.setAttribute('aria-label', open ? 'Program alanını küçült' : 'Program alanını büyüt');
     this.layout();
@@ -374,6 +402,7 @@ export class Game {
     btn.innerHTML = `${svg(label[0])}${label[1]}`;
     btn.classList.toggle('go', s === 'paused');
     $('resetBtn').disabled = s === 'idle';
+    this.setFlying(!this.quiz && (s === 'running' || s === 'paused'));
     this.renderWaves(); this.tune();
   }
 
@@ -401,7 +430,7 @@ export class Game {
   }
 
   start(step) {
-    this.reset(); this.setDrawer(false);
+    this.reset(); this.setDrawer('');
     // Uçuş hep ilk dalgadan başlar; ekranda başka bir dalga duruyorsa önce ilkine dönülür.
     if (this.wave !== 0) { this.wave = 0; this.setScene(0); }
     this.stepMode = step; this.results = [];
@@ -1061,6 +1090,11 @@ export class Game {
       mark(ev, here, t); return t;
     });
     this.view.showSenses([...marks.values()]);
+    // Dik telefonda balonlar küçük ızgarayı örter: sorular ve cevapları panelde, programın üstünde durur.
+    if (this.portrait) {
+      $('senseBar').innerHTML = senses.map((ev, i) => `<span class="sense" style="--c:${TONE[tones[i]]}"><span class="cond">${CONDS[ev.cond].label}</span><b class="${ev.result ? '' : 'no'}">${ev.result ? 'EVET' : 'HAYIR'}</b></span>`).join('');
+      return;
+    }
     const side = senses.find((ev) => ev.cond !== 'ahead');
     const taken = new Set();
     for (const [i, ev] of senses.entries()) {
@@ -1089,7 +1123,7 @@ export class Game {
       if (shift) el.style.left = `${parseFloat(el.style.left) + shift}px`;
     }
   }
-  hideCall() { $('calls').replaceChildren(); this.view.hideSense(); }
+  hideCall() { $('calls').replaceChildren(); $('senseBar').replaceChildren(); this.view.hideSense(); }
 
   /** Sarı silüeti verilen hareketin hedef karesine koyar; hedef yoksa ya da çıkışın ötesindeyse gizler. */
   showTarget(ev) {

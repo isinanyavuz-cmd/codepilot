@@ -11,12 +11,12 @@
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <title>Kod Pilotu</title>
-<link rel="stylesheet" href="css/style.css?v=c26dbbf3">
-<meta name="surum" content="9fd0e69">
+<link rel="stylesheet" href="css/style.css?v=90acf39d">
+<meta name="surum" content="3bd1d96">
 <script type="importmap">
 {
  "imports": {
-  "./src/content/advanced.js": "./src/content/advanced.js?v=3dc7536f",
+  "./src/content/advanced.js": "./src/content/advanced.js?v=bd5606e3",
   "./src/content/custom.js": "./src/content/custom.js?v=881baca7",
   "./src/content/daily.js": "./src/content/daily.js?v=0305f380",
   "./src/content/extras.js": "./src/content/extras.js?v=6e429fe9",
@@ -39,7 +39,7 @@
   "./src/storage.js": "./src/storage.js?v=3117dba3",
   "./src/ui/copilot.js": "./src/ui/copilot.js?v=514243d9",
   "./src/ui/editor.js": "./src/ui/editor.js?v=99c517f4",
-  "./src/ui/game.js": "./src/ui/game.js?v=826c5985",
+  "./src/ui/game.js": "./src/ui/game.js?v=8d994c34",
   "./src/ui/hangar.js": "./src/ui/hangar.js?v=e8455007",
   "./src/ui/map.js": "./src/ui/map.js?v=2e903761",
   "./src/ui/overlay.js": "./src/ui/overlay.js?v=ddb095f4",
@@ -103,6 +103,7 @@
         <span class="counter" id="counter"></span>
       </div>
     </div>
+    <div class="sensebar" id="senseBar" aria-hidden="true"></div>
     <div class="ws" id="ws"></div>
     <pre class="py" id="py" hidden></pre>
     <div class="quizbar" id="quizBar" hidden><p id="quizAsk"></p><div class="qbtns" id="quizBtns"></div></div>
@@ -118,6 +119,7 @@
 
   <label class="scrub glass" id="scrub" hidden><span>geri sar</span><input type="range" id="scrubRange" min="0" max="1" step="1" value="1" aria-label="Uçuşu geri sar"><b id="scrubLab"></b></label>
   <div id="calls"></div>
+  <div class="peek" id="peekHint" aria-hidden="true" hidden><svg viewBox="0 0 32 32"><path d="M19 5h8v8M27 5l-9 9M13 27H5v-8M5 27l9-9" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
   <div id="picks"></div>
   <div id="toast" class="toast glass" hidden></div>
 </section>

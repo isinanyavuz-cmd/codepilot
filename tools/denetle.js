@@ -150,6 +150,17 @@ function singleFixes(level) {
     list.forEach((b, i) => { for (const k of CONTAINERS[b.type] || []) swapIn(b[k], [...path, [i, k]]); });
   };
   swapIn(base, []);
+  // bir bloğu başka bir yere taşımak: sürükleyip başka bir kabın içine ya da başka bir bloğun üstüne bırakmak
+  const listsOf = (program, out = [], path = []) => { out.push(path); program.forEach((b, i) => { for (const k of CONTAINERS[b.type] || []) listsOf(b[k], out, [...path, [i, k]]); }); return out; };
+  const listAt = (program, path) => path.reduce((l, [i, k]) => l[i][k], program);
+  for (const from of listsOf(base)) for (let i = 0; i < listAt(base, from).length; i++) {
+    const cut = clone0(base), [block] = listAt(cut, from).splice(i, 1);
+    for (const to of listsOf(cut)) for (let j = 0; j <= listAt(cut, to).length; j++) {
+      const copy = clone0(cut);
+      listAt(copy, to).splice(j, 0, clone0(block));
+      tryIt('bir bloğu taşımak', copy);
+    }
+  }
   // eksik tek blok eklemek (tanış / dene görevleri için)
   for (const t of level.tools) {
     if (CONTAINERS[t]) continue;
